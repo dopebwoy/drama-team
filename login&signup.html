@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>login</title>
+    <link rel="icon" type="image/icon" href="./photos/logo.png">
+    <style>
+        body {
+            font-size: 20px;
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            font-weight: lighter;
+            text-align: center;
+            color: bisque;
+            background-color: rgb(73, 65, 54);
+
+
+        }
+
+        div {
+            padding: 70px 20px;
+            background-image: url('./photos/backonlogin.jpg');
+            background-position: top;
+            background-size: cover;
+
+            opacity: 0.8;
+            border-radius: 40%;
+            box-shadow: -10px 22px 12px 12px rgba(231, 114, 114, 0.2);
+        }
+
+        fieldset {
+            padding: 40px 10px;
+            border-radius: 5px;
+            position: relative;
+            top: 1cm;
+            padding: 90px 0px;
+
+
+
+        }
+
+        a {
+            text-decoration: none;
+            color: bisque;
+
+        }
+    </style>
+</head>
+
+<body>
+    <nav><a href="index.html">⬅️HOME</a></nav><br>
+    <div class="empty"></div>
+    <fieldset>
+        <legend>login first</legend>
+        <form>
+            <label for="password">Password</label><br>
+
+            <input type="password" class="input pass" id="pass"><br>
+            <label for="name">your name</label><br>
+            <input type="text" class="input " id="name" required><br><br>
+            <button>Continue</button>
+        </form>
+
+    </fieldset>
+
+    <script>
+        let inputs = document.querySelectorAll('.input')
+        const passkey = localStorage.getItem('password')
+        let cont = document.querySelector('button')
+        const pass = document.querySelector(".pass")
+        console.log(pass.value)
+
+
+        inputs.forEach((input) => {
+            input.style.backgroundColor = "rgba(0, 128, 255, 0.051)";
+
+        })
+        let status = []
+        let newusercheck = 'old'
+        if (localStorage.getItem('status')) {
+
+            status[0] = newusercheck
+
+        }
+        else {
+            newusercheck = 'new'
+            status[0] = newusercheck
+        }
+
+        cont.addEventListener('click', (e) => {
+            e.preventDefault()
+            const password = pass.value;
+            if (password && passkey) {
+                if (passkey === password) {
+                    pass.value = ""
+                    window.location.href = 'store.html'
+                    status[1] = 'active'
+                    status[2] = document.getElementById('name').value
+                    localStorage.setItem('status', JSON.stringify(status))
+                } else {
+                    alert('wrong password😢')
+                    setTimeout(() => {
+
+                        window.location.href = 'index.html'
+                    }, 10);
+                }
+            } else {
+                alert('something went wrong, contact suport!😒')
+            }
+        })
+
+
+
+    </script>
+</body>
+
+</html>

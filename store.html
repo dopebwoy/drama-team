@@ -1,265 +1,663 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drama gallery stock</title>
-    <link rel="icon" type="image/icon" href="./photos/logo.png">
+    <title>Drama Gallery Stock</title>
+    <link rel="icon" type="image/png" href="./photos/logo.png">
+
     <style>
+        :root {
+            --bg: #111;
+            --surface: #1a1a1a;
+            --surface-2: #242424;
+            --text: bisque;
+            --muted: #bdbdbd;
+            --border: #333;
+            --accent: #d3d3d3;
+            --danger: #8b0000;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            background-color: rgb(17, 17, 17);
-            color: bisque;
-            font-size: 20px;
-            font-family: Georgia, 'Times New Roman', Times, serif;
-            font-weight: lighter;
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Georgia, "Times New Roman", Times, serif;
+            font-weight: 400;
         }
 
         nav {
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
         }
 
-        a {
-            margin: 0 45px;
+        nav a {
+            margin: 0;
+            text-decoration: none;
         }
 
-        section {
-            display: flex;
-
+        button,
+        select,
+        label {
+            font: inherit;
         }
 
-        select {
-            border-radius: 10px;
+        .nav-button {
+            border: 0;
+            border-radius: 8px;
+            padding: 8px 14px;
+            cursor: pointer;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .nav-button:hover {
+            opacity: 0.85;
+            transform: translateY(-1px);
         }
 
         #umukomite-button {
-            padding: 5px;
-            background-color: rgb(207, 208, 209);
+            background: var(--accent);
+            color: #111;
         }
 
         #logout-button {
-            padding: 5px;
-            background-color: brown;
+            background: brown;
+            color: white;
         }
 
-        #logo-tittle {
-            position: relative;
-            top: 1cm;
-
-
+        header {
+            padding: 10px 20px 20px;
         }
 
-        #small-tittle {
-            position: relative;
-            top: 2px;
-            font-size: 10px;
-        }
-
-        #defaults {
-            font-size: 9px;
-            color: rgb(225, 248, 248);
-            text-align: center;
-            margin-top: 4cm;
-        }
-
-        fieldset {
-            min-height: 400px;
+        header section {
             display: flex;
-            flex-wrap: wrap;
-            margin: 0 1px;
-            justify-content: center;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            padding: 20px 3px;
-            border-radius: 5px;
-            border: 1px rgb(41, 41, 41) solid;
-            background-color: rgb(26, 26, 26);
+            align-items: center;
+            gap: 12px;
         }
 
-        .smallImage {
-            border-radius: 10px;
-            width: 100px;
-            height: 120px;
-            padding: 2px;
+        #logo {
+            width: 90px;
+            height: 90px;
+            max-width: 100%;
+            object-fit: contain;
         }
 
-        .new::after {
-            content: ',  here u can check on all photos u want from drama team family';
+        #logo-title {
+            margin: 0;
+            font-size: clamp(1.5rem, 4vw, 2rem);
+        }
+
+        #small-title {
+            display: block;
+            margin-top: 3px;
+            font-size: 0.65rem;
+        }
+
+        #welcome {
+            margin: 15px 0 0;
+            font-size: clamp(1.2rem, 3vw, 1.7rem);
+        }
+
+        #title.new::after {
+            content: ", here you can check all photos you want from drama team family";
+        }
+
+        #title.new,
+        #welcome.new {
+            font-size: 15px;
+        }
+
+        main {
+            position: relative;
+            padding: 0 12px 30px;
         }
 
         #tools {
             display: flex;
-            font-size: 13px;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            justify-content: space-evenly;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px 24px;
+            margin-bottom: 15px;
+            font: 13px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+                sans-serif;
         }
 
-        .input {
-            background-color: rgb(211, 211, 211);
-            color: black;
-            font-weight: 100%;
+        .tool {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .input-button {
+            display: inline-block;
+            background: #d3d3d3;
+            color: #111;
             border-radius: 8px;
-            padding: 1px 7px;
-
-        }
-
-        #logo {
-            min-width: 90px;
-            min-height: 50px;
-            max-height: 100px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-weight: 700;
         }
 
         select {
-            background-color: rgb(207, 207, 207);
+            background: #cfcfcf;
+            color: #111;
+            border: 0;
+            border-radius: 8px;
+            padding: 5px 8px;
+            cursor: pointer;
+        }
+
+        #container {
+            min-height: 400px;
+            margin: 0;
+            padding: 20px 8px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+            align-content: start;
+        }
+
+        #container.large-view {
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        }
+
+        #container.title-view {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .gallery-image {
+            width: 100%;
+            height: 160px;
+            padding: 2px;
+            border-radius: 10px;
+            object-fit: cover;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .gallery-image:hover {
+            transform: scale(1.02);
+            border-color: #777;
+        }
+
+        #container.title-view .gallery-image {
+            width: 90px;
+            height: 60px;
+            object-fit: cover;
+            margin: 0;
+        }
+
+        #defaults {
+            grid-column: 1 / -1;
+            margin: auto;
+            color: #e1f8f8;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* Full-screen image viewer */
+        .modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.92);
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        #zoomedImage {
+            display: block;
+            max-width: 95vw;
+            max-height: 90vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border: 1px solid indianred;
+            border-radius: 20px;
         }
 
         #close {
             position: absolute;
-            top: 20px;
-            right: 30px;
-            font-size: 45px;
+            top: 15px;
+            right: 25px;
+            border: 0;
+            background: transparent;
             color: white;
+            font-size: 45px;
+            line-height: 1;
             cursor: pointer;
         }
 
-        #zoomedImage {
-          min-width: 100%;
-          max-height: 100%;
-            border: 1 solid indianred;
-            position: relative;
-            border-radius: 20px;
-            
-            
-           
-        }
-        .model {
-            display: flex;
-            position: sticky;
-            bottom: 1cm;
-            object-fit: contain;
-            max-height: 100%;
+        #close:hover {
+            color: #ddd;
         }
 
-        .visibility {
-            display: none;
-            
-        } main{
-           position: relative;
-           
+        @media (max-width: 600px) {
+            nav {
+                padding: 10px;
+            }
+
+            header {
+                padding-inline: 10px;
+            }
+
+            #logo {
+                width: 70px;
+                height: 70px;
+            }
+
+            #container {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            #container.large-view {
+                grid-template-columns: 1fr;
+            }
+
+            .modal {
+                padding: 15px;
+            }
+
+            #close {
+                top: 10px;
+                right: 15px;
+                font-size: 38px;
+            }
         }
     </style>
 </head>
 
 <body>
     <nav>
-        <a href="manager.html"><button id="umukomite-button">umucomitte</button></a>
-        <a href="index.html"><button id="logout-button">LogOut</button></a>
+        <a href="manager.html">
+            <button type="button" class="nav-button" id="umukomite-button">
+                Umukomitte
+            </button>
+        </a>
+
+        <a href="index.html">
+            <button type="button" class="nav-button" id="logout-button">
+                Log Out
+            </button>
+        </a>
     </nav>
+
     <header>
         <section>
-            <img src="./photos/logo.png" alt="logo" width="100px" height="100px" id="logo">
-            <p id="logo-tittle">DRAMA TEAM <small id="small-tittle"><strong>Guardian of heaven</strong></small></p>
+            <img src="./photos/logo.png" alt="Drama Team logo" id="logo">
+
+            <p id="logo-title">
+                DRAMA TEAM
+                <small id="small-title"><strong>Guardian of heaven</strong></small>
+            </p>
         </section>
 
-        <h2><span id="great">welcome back</span> <span id="tittle">...</span></h2>
-
-
+        <h2 id="welcome">
+            <span id="great">Welcome back</span>
+            <span id="title">...</span>
+        </h2>
     </header>
+
     <main>
         <div id="tools">
-            <div><input type="file" id="input" multiple accept="image/*" hidden>
-                <label for="input" class="input"><strong>upload</strong></label>
+            <div class="tool">
+                <input
+                    type="file"
+                    id="input"
+                    multiple
+                    accept="image/*"
+                    hidden
+                >
+                <label for="input" class="input-button">Upload</label>
             </div>
-            <div> <label for="sort">sort</label>
+
+            <div class="tool">
+                <label for="sort">Sort</label>
                 <select id="sort">
-                    <option>time created</option>
-                    <option>year</option>
-                    <option>oldest</option>
+                    <option value="new">New</option>
+                    <option value="older">Older</option>
+                    <option value="size">Size</option>
                 </select>
             </div>
-            <div> <label for="view">view</label>
+
+            <div class="tool">
+                <label for="view">View</label>
                 <select id="view">
-                    <option>gird</option>
-                    <option>large</option>
-                    <option>titlle</option>
+                    <option value="grid">Grid</option>
+                    <option value="large">Large</option>
+                    <option value="title">Small</option>
                 </select>
             </div>
-
-
-
         </div>
 
-        <fieldset id="container">
-            <p id="defaults">nothing to show...</p>
-
-
-
-        </fieldset>
-        <div class="model">
-            <img id="zoomedImage">
+        <div id="container" aria-live="polite">
+            <p id="defaults">Nothing to show...</p>
         </div>
-
     </main>
+
+    <div
+        id="imageModal"
+        class="modal hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Image preview"
+    >
+        <button type="button" id="close" aria-label="Close image preview">
+            &times;
+        </button>
+
+        <img id="zoomedImage" alt="Selected image preview">
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
+        "use strict";
 
-        const status = JSON.parse(localStorage.getItem('status'))
-        storedNmae = status[2]
-        document.getElementById('tittle').textContent = storedNmae
-        const viewer = document.getElementById('viewer')
-        const zoomedImage = document.getElementById('zoomedImage')
-        const logout = document.getElementById('logout-button')
+        // Supabase public frontend configuration.
+        // Never put a service_role/secret key in this file.
+        const SUPABASE_URL = "https://fedwjrefdabcbbklaafz.supabase.co";
+        const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_wL7XncIhcH0fqjL_Mxo4Lg_U5z_2edi";
+        const BUCKET_NAME = "photos";
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB per image
 
-        logout.addEventListener('click', () => {
-            localStorage.clear()
+        const supabaseClient = window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_PUBLISHABLE_KEY
+        );
 
-        })
+        const input = document.getElementById("input");
+        const uploadLabel = document.querySelector('label[for="input"]');
+        const container = document.getElementById("container");
+        const sortSelect = document.getElementById("sort");
+        const viewSelect = document.getElementById("view");
+        const imageModal = document.querySelector(".modal");
+        const zoomedImage = document.getElementById("zoomedImage");
+        const closeButton = document.getElementById("close");
+        const logoutButton = document.getElementById("logout-button");
+        const great = document.getElementById("great");
+        const title = document.getElementById("title");
 
-        const newcheck = status[0]
-        if (newcheck === 'new') {
-            let great = document.getElementById("great")
-            let title = document.getElementById('tittle')
-            great.textContent = 'hey ☺️ '
-            great.style.fontSize = "15px"
-            title.classList.add('new')
-            title.style.fontSize = '15px'
+        let galleryItems = [];
 
+        function showMessage(message, type = "") {
+            let box = document.getElementById("statusMessage");
+            if (!box) {
+                box = document.createElement("p");
+                box.id = "statusMessage";
+                box.style.cssText =
+                    "position:fixed;left:50%;top:15px;transform:translateX(-50%);z-index:1100;max-width:90vw;padding:10px 15px;border-radius:8px;font:13px system-ui,sans-serif;background:#222;color:#fff;text-align:center;";
+                document.body.appendChild(box);
+            }
+            box.textContent = message;
+            box.style.background = type === "error" ? "#6b1d1d" : type === "success" ? "#216e39" : "#222";
+            clearTimeout(showMessage.timer);
+            showMessage.timer = setTimeout(() => box.remove(), 5000);
         }
-        let container = document.getElementById('container')
-        let input = document.querySelector("input")
-        let model = document.querySelector('.model')
 
-        let largeImage = document.getElementById('zoomedImage')
-        input.addEventListener('change', () => {
-            container.innerHTML = ''
-
-            for (file of input.files) {
-                let imageURL = URL.createObjectURL(file)
-                let img = document.createElement('img')
-                img.src = imageURL
-                container.appendChild(img)
-                img.classList.add('smallImage')
-                document.querySelectorAll('.smallImage').forEach((element) => {
-                    element.addEventListener('click', (e) => {
-                        model.classList.toggle('visibility')
-                        largeImage.src = e.target.src
-
-                    });
-                })
-
+        function loadUserStatus() {
+            try {
+                const savedStatus = localStorage.getItem("status");
+                if (!savedStatus) {
+                    title.textContent = "";
+                    return;
+                }
+                const status = JSON.parse(savedStatus);
+                if (Array.isArray(status)) {
+                    title.textContent = status[2] ?? "";
+                    if (status[0] === "new") {
+                        great.textContent = "Hey ☺️";
+                        title.classList.add("new");
+                    }
+                }
+            } catch (error) {
+                console.error("Could not read saved status:", error);
+                title.textContent = "";
             }
         }
-        )
-        largeImage.addEventListener('click',(e)=>{
-           model.classList.add('visibility')
-        })
 
+        function detectYear(fileName) {
+            const match = fileName.match(/\b(2024|2025|2026)\b/);
+            return match ? Number(match[1]) : null;
+        }
 
+        function formatFileSize(bytes) {
+            if (!Number.isFinite(bytes) || bytes <= 0) return "Unknown size";
+            const units = ["B", "KB", "MB", "GB"];
+            const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+            return `${(bytes / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
+        }
 
+        function safeFileName(name) {
+            return name
+                .normalize("NFKD")
+                .replace(/[^\w.\-]+/g, "-")
+                .replace(/-+/g, "-")
+                .replace(/^-|-$/g, "")
+                .toLowerCase() || "image";
+        }
 
+        function createStoragePath(file) {
+            return `${crypto.randomUUID()}-${safeFileName(file.name)}`;
+        }
 
+        function getPublicUrl(storagePath) {
+            const { data } = supabaseClient.storage
+                .from(BUCKET_NAME)
+                .getPublicUrl(storagePath);
+            return data.publicUrl;
+        }
 
+        async function loadPhotos() {
+            container.innerHTML = '<p id="defaults">Loading photos...</p>';
 
+            const { data, error } = await supabaseClient
+                .from("photos")
+                .select("id, file_name, storage_path, uploaded_by, created_at")
+                .order("created_at", { ascending: false });
+
+            if (error) {
+                console.error("Could not load photos:", error);
+                renderGallery([]);
+                showMessage(`Could not load photos: ${error.message}`, "error");
+                return;
+            }
+
+            galleryItems = data.map(record => ({
+                ...record,
+                url: getPublicUrl(record.storage_path),
+                year: detectYear(record.file_name)
+            }));
+
+            sortGallery(sortSelect.value);
+        }
+
+        function createImageElement(item) {
+            const wrapper = document.createElement("div");
+            wrapper.className = "gallery-item";
+
+            const img = document.createElement("img");
+            img.src = item.url;
+            img.alt = item.file_name;
+            img.className = "gallery-image";
+            img.loading = "lazy";
+            img.title = item.file_name;
+            img.addEventListener("click", () => openImage(item.url, item.file_name));
+
+            const info = document.createElement("div");
+            info.className = "file-info";
+            info.textContent = item.file_name;
+
+            wrapper.append(img, info);
+            return wrapper;
+        }
+
+        function renderGallery(items) {
+            container.replaceChildren();
+            if (items.length === 0) {
+                const empty = document.createElement("p");
+                empty.id = "defaults";
+                empty.textContent = "Nothing to show...";
+                container.appendChild(empty);
+                return;
+            }
+            items.forEach(item => container.appendChild(createImageElement(item)));
+            applyView(viewSelect.value);
+        }
+
+        function sortGallery(sortType) {
+            const sorted = [...galleryItems];
+            if (sortType === "new") {
+                sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            } else if (sortType === "older") {
+                sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            } else if (sortType === "size") {
+                // The current photos table has no file_size column.
+                // Keep a stable fallback until that column is added.
+                sorted.sort((a, b) => a.file_name.localeCompare(b.file_name));
+            }
+            renderGallery(sorted);
+        }
+
+        function applyView(viewType) {
+            container.classList.remove("large-view", "title-view");
+            if (viewType === "large") container.classList.add("large-view");
+            if (viewType === "title") container.classList.add("title-view");
+        }
+
+        viewSelect.addEventListener("change", event => applyView(event.target.value));
+        sortSelect.addEventListener("change", event => sortGallery(event.target.value));
+
+        async function uploadFile(file) {
+            if (!file.type.startsWith("image/")) {
+                throw new Error(`${file.name} is not an image.`);
+            }
+            if (file.size > MAX_FILE_SIZE) {
+                throw new Error(`${file.name} is larger than ${formatFileSize(MAX_FILE_SIZE)}.`);
+            }
+
+            const storagePath = createStoragePath(file);
+
+            const { error: storageError } = await supabaseClient.storage
+                .from(BUCKET_NAME)
+                .upload(storagePath, file, {
+                    cacheControl: "3600",
+                    upsert: false,
+                    contentType: file.type
+                });
+
+            if (storageError) {
+                throw new Error(`Storage upload failed for ${file.name}: ${storageError.message}`);
+            }
+
+            const { data: record, error: databaseError } = await supabaseClient
+                .from("photos")
+                .insert({
+                    file_name: file.name,
+                    storage_path: storagePath,
+                    uploaded_by: "anonymous"
+                })
+                .select()
+                .single();
+
+            if (databaseError) {
+                await supabaseClient.storage.from(BUCKET_NAME).remove([storagePath]);
+                throw new Error(`Database save failed for ${file.name}: ${databaseError.message}`);
+            }
+
+            return {
+                ...record,
+                url: getPublicUrl(storagePath),
+                year: detectYear(file.name)
+            };
+        }
+
+        input.addEventListener("change", async event => {
+            const selectedFiles = Array.from(event.target.files);
+            if (!selectedFiles.length) return;
+
+            document.body.style.cursor = "progress";
+            uploadLabel.style.pointerEvents = "none";
+            uploadLabel.style.opacity = "0.55";
+            uploadLabel.textContent = "Uploading...";
+
+            let successful = 0;
+            const failed = [];
+
+            for (const file of selectedFiles) {
+                try {
+                    const uploadedItem = await uploadFile(file);
+                    galleryItems.unshift(uploadedItem);
+                    successful++;
+                } catch (error) {
+                    console.error(error);
+                    failed.push(error.message);
+                }
+            }
+
+            sortGallery(sortSelect.value);
+
+            if (!failed.length) {
+                showMessage(`${successful} photo${successful === 1 ? "" : "s"} uploaded successfully.`, "success");
+            } else {
+                showMessage(`${successful} uploaded. ${failed.length} failed: ${failed.join(" | ")}`, "error");
+            }
+
+            document.body.style.cursor = "";
+            uploadLabel.style.pointerEvents = "";
+            uploadLabel.style.opacity = "";
+            uploadLabel.textContent = "Upload";
+            input.value = "";
+        });
+
+        function openImage(url, fileName) {
+            zoomedImage.src = url;
+            zoomedImage.alt = fileName || "Selected image";
+            imageModal.classList.remove("hidden");
+            document.body.style.overflow = "hidden";
+        }
+
+        function closeImage() {
+            imageModal.classList.add("hidden");
+            zoomedImage.removeAttribute("src");
+            document.body.style.overflow = "";
+        }
+
+        closeButton.addEventListener("click", closeImage);
+        imageModal.addEventListener("click", event => {
+            if (event.target === imageModal) closeImage();
+        });
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && !imageModal.classList.contains("hidden")) closeImage();
+        });
+
+        logoutButton.addEventListener("click", () => localStorage.clear());
+
+        loadUserStatus();
+        loadPhotos();
     </script>
 </body>
-
 </html>

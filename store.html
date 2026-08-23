@@ -486,33 +486,25 @@
                 return;
             }
 
-            galleryItems = data.map(record => ({
-                ...record,
-                url: getPublicUrl(record.storage_path),
-                year: detectYear(record.file_name)
-            }));
+            try {
+                // Check the actual Supabase Storage bucket before displaying anything.
+                // A database row is displayed only when its storage object still exists.
+                const existingStoragePaths = await getExistingStoragePaths();
 
-            sortGallery(sortSelect.value);
-        }
+                galleryItems = data
+                    .filter(record => existingStoragePaths.has(record.storage_path))
+                    .map(record => ({
+                        ...record,
+                        url: getPublicUrl(record.storage_path),
+                        year: detectYear(record.file_name)
+                    }));
 
-        function createImageElement(item) {
-            const wrapper = document.createElement("div");
-            wrapper.className = "gallery-item";
-
-            const img = document.createElement("img");
-            img.src = item.url;
-            img.alt = item.file_name;
-            img.className = "gallery-image";
-            img.loading = "lazy";
-            img.title = item.file_name;
-            img.addEventListener("click", () => openImage(item.url, item.file_name));
-
-            const info = document.createElement("div");
-            info.className = "file-info";
-            info.textContent = item.file_name;
-
-            wrapper.append(img, info);
-            return wrapper;
+                sortGallery(sortSelect.value);
+            } catch (storageError) {
+                console.error("Could not verify photos in Supabase Storage:", storageError);
+                renderGallery([]);
+                showMessage(storageError.message, "error");
+            }
         }
 
         function renderGallery(items) {

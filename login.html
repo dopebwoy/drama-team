@@ -21,8 +21,9 @@
         div {
             padding: 70px 20px;
             background-image: url('./photos/backonlogin.jpg');
-            background-position: top;
+            background-position: bottom;
             background-size: cover;
+            background-repeat: no-repeat;
 
             opacity: 0.8;
             border-radius: 40%;
@@ -44,6 +45,10 @@
             text-decoration: none;
             color: bisque;
 
+        }
+        input{
+            padding: 5px;
+            border-radius: 10px;
         }
     </style>
 </head>
@@ -100,7 +105,7 @@
                     status[2] = document.getElementById('name').value
                     localStorage.setItem('status', JSON.stringify(status))
                 }
-                else if(public_passkey === manager_password){
+                else if(password === manager_password){
                     alert('u are now going to umukomite dashboard')
                     window.location.href = 'manager.html'
                 } else {

@@ -66,9 +66,10 @@
 
     <script>
         let inputs = document.querySelectorAll('.input')
-        const passkey = localStorage.getItem('password')
+        const public_passkey = localStorage.getItem('password')
         let cont = document.querySelector('button')
         const pass = document.querySelector(".pass")
+        const manager_password = 'umu7.2026'
         console.log(pass.value)
 
 
@@ -91,13 +92,17 @@
         cont.addEventListener('click', (e) => {
             e.preventDefault()
             const password = pass.value;
-            if (password && passkey) {
-                if (passkey === password) {
+            if (password && public_passkey) {
+                if (public_passkey === password) {
                     pass.value = ""
                     window.location.href = 'store.html'
                     status[1] = 'active'
                     status[2] = document.getElementById('name').value
                     localStorage.setItem('status', JSON.stringify(status))
+                }
+                else if(public_passkey === manager_password){
+                    alert('u are now going to umukomite dashboard')
+                    window.location.href = 'manager.html'
                 } else {
                     alert('wrong password😢')
                     setTimeout(() => {

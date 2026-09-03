@@ -73,9 +73,14 @@
         
         
     }
+    button{
+      padding: 5px 30px;  
+      border-radius: 10px;
+      background-color: rgb(157, 157, 173);
+    }
 </style>
 
-<body>
+<body class="body">
     <section>
         <nav id="nav">
             <ul>
@@ -86,7 +91,7 @@
         <br><br>
         <div id="container">
             <fieldset>
-                <h2 id="welcome">welcome to Drama Team</h2>
+                <h2 id="welcome">welcome to Drama Team gallery-image store platfoam</h2>
             </fieldset><br>
             <p id="first-time">first time ? </p>
             <br>
@@ -96,6 +101,11 @@
     <script>
         const password="drama"
         localStorage.setItem('password',password)
+        let active = localStorage.getItem('active')
+        if(active=== 'active'){
+            window.location.href = 'store.html'
+        }
+       
     </script>
     
 </body>

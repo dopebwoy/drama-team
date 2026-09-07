@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://sitemaps.org">
+  <url>
+    <loc>https://netlify.app</loc>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://netlify.appindex.html</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://netlify.appabout.html</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://netlify.appcontact.html</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://netlify.appstore.html</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://netlify.applogin.html</loc>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://netlify.appmanager.html</loc>
+    <priority>0.5</priority>
+  </url>
+</urlset>

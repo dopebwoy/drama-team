@@ -140,6 +140,11 @@
             opacity: .55;
         }
 
+        button.input-button {
+            border: 0;
+            font-weight: 700;
+        }
+
         select {
             background: #cfcfcf;
             color: #111;
@@ -256,6 +261,17 @@
             padding: 10px;
         }
 
+        .image-placeholder {
+            display: grid;
+            place-items: center;
+            width: 100%;
+            height: 100%;
+            padding: 10px;
+            color: #888;
+            font: 12px system-ui, sans-serif;
+            text-align: center;
+        }
+
         .modal {
             position: fixed;
             inset: 0;
@@ -340,6 +356,12 @@
             </div>
 
             <div class="tool">
+                <button type="button" class="input-button" id="generateThumbnailsButton">
+                    Generate missing thumbnails
+                </button>
+            </div>
+
+            <div class="tool">
                 <label for="sort">Sort</label>
                 <select id="sort">
                     <option value="new">New</option>
@@ -394,6 +416,7 @@
         const zoomedImage = document.getElementById("zoomedImage");
         const closeButton = document.getElementById("close");
         const logoutButton = document.getElementById("logout-button");
+        const generateThumbnailsButton = document.getElementById("generateThumbnailsButton");
         const great = document.getElementById("great");
         const title = document.getElementById("title");
 
@@ -472,6 +495,48 @@
             return data.publicUrl;
         }
 
+        function getThumbnailPath(storagePath) {
+            return `${storagePath}.thumb.webp`;
+        }
+
+        function getThumbnailUrl(storagePath, cacheBust = "") {
+            const url = getPublicUrl(getThumbnailPath(storagePath));
+            return cacheBust ? `${url}?v=${encodeURIComponent(cacheBust)}` : url;
+        }
+
+        async function createThumbnail(blob) {
+            if (!("createImageBitmap" in window)) {
+                throw new Error("This browser cannot create thumbnails. Try a recent version of Chrome, Edge, or Firefox.");
+            }
+
+            const bitmap = await createImageBitmap(blob);
+            const width = 480;
+            const height = 360;
+            const scale = Math.max(width / bitmap.width, height / bitmap.height);
+            const cropWidth = width / scale;
+            const cropHeight = height / scale;
+            const cropX = (bitmap.width - cropWidth) / 2;
+            const cropY = (bitmap.height - cropHeight) / 2;
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+
+            const context = canvas.getContext("2d");
+            if (!context) {
+                bitmap.close();
+                throw new Error("Could not create a thumbnail canvas.");
+            }
+
+            context.drawImage(bitmap, cropX, cropY, cropWidth, cropHeight, 0, 0, width, height);
+            bitmap.close();
+
+            const thumbnail = await new Promise(resolve =>
+                canvas.toBlob(resolve, "image/webp", 0.68)
+            );
+            if (!thumbnail) throw new Error("Could not encode the thumbnail as WebP.");
+            return thumbnail;
+        }
+
         async function sha256File(file) {
             const buffer = await file.arrayBuffer();
             const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
@@ -509,11 +574,24 @@
             galleryItems = data.map(record => ({
                 ...record,
                 url: getPublicUrl(record.storage_path),
+                thumbnailUrl: getThumbnailUrl(record.storage_path),
                 year: detectYear(record.file_name)
             }));
 
             sortGallery(sortSelect.value);
         }
+
+        const imageObserver = "IntersectionObserver" in window
+            ? new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) return;
+                    const img = entry.target;
+                    img.src = img.dataset.thumbnailUrl;
+                    img.removeAttribute("data-thumbnail-url");
+                    observer.unobserve(img);
+                });
+            }, { rootMargin: "200px 0px" })
+            : null;
 
         function createImageElement(item) {
             const wrapper = document.createElement("div");
@@ -523,23 +601,29 @@
             frame.className = "image-frame";
 
             const img = document.createElement("img");
-            img.src = item.url;
             img.alt = item.file_name || "Drama Team photo";
             img.className = "gallery-image";
             img.loading = "lazy";
             img.decoding = "async";
             img.title = item.file_name || "";
-            img.addEventListener("click", () => openImage(item.url, item.file_name));
+            img.dataset.thumbnailUrl = item.thumbnailUrl || getThumbnailUrl(item.storage_path);
+            frame.setAttribute("role", "button");
+            frame.setAttribute("tabindex", "0");
+            frame.setAttribute("aria-label", `Open ${item.file_name || "photo"} in full size`);
+            frame.addEventListener("click", () => openImage(item.url, item.file_name));
+            frame.addEventListener("keydown", event => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openImage(item.url, item.file_name);
+                }
+            });
 
             img.addEventListener("error", () => {
-                // A missing Storage object should not remain visible as a dead card.
-                // The manager's cleanup tool can remove the orphaned database row.
-                const currentId = item.id;
-                galleryItems = galleryItems.filter(record => String(record.id) !== String(currentId));
-                wrapper.remove();
-                if (!galleryItems.length) {
-                    renderGallery([]);
-                }
+                img.hidden = true;
+                const placeholder = document.createElement("div");
+                placeholder.className = "image-placeholder";
+                placeholder.textContent = "Thumbnail unavailable. Click to open the original.";
+                frame.prepend(placeholder);
             }, { once: true });
 
             const info = document.createElement("div");
@@ -556,12 +640,15 @@
 
             info.append(name, meta);
             frame.appendChild(img);
+            if (imageObserver) imageObserver.observe(img);
+            else img.src = img.dataset.thumbnailUrl;
             wrapper.append(frame, info);
 
             return wrapper;
         }
 
         function renderGallery(items) {
+            if (imageObserver) imageObserver.disconnect();
             container.replaceChildren();
 
             if (items.length === 0) {
@@ -620,10 +707,13 @@
                     existing: {
                         ...existing,
                         url: getPublicUrl(existing.storage_path),
+                        thumbnailUrl: getThumbnailUrl(existing.storage_path),
                         year: detectYear(existing.file_name)
                     }
                 };
             }
+
+            const thumbnail = await createThumbnail(file);
 
             const storagePath = createStoragePath(file);
 
@@ -637,6 +727,20 @@
 
             if (storageError) {
                 throw new Error(`Storage upload failed for ${file.name}: ${storageError.message}`);
+            }
+
+            const thumbnailPath = getThumbnailPath(storagePath);
+            const { error: thumbnailError } = await supabaseClient.storage
+                .from(BUCKET_NAME)
+                .upload(thumbnailPath, thumbnail, {
+                    cacheControl: "31536000",
+                    upsert: false,
+                    contentType: "image/webp"
+                });
+
+            if (thumbnailError) {
+                await supabaseClient.storage.from(BUCKET_NAME).remove([storagePath]);
+                throw new Error(`Thumbnail upload failed for ${file.name}: ${thumbnailError.message}`);
             }
 
             // The UNIQUE(file_hash) constraint is the final protection against
@@ -655,7 +759,7 @@
 
             if (databaseError) {
                 // If another upload won the race, our storage object is unnecessary.
-                await supabaseClient.storage.from(BUCKET_NAME).remove([storagePath]);
+                await supabaseClient.storage.from(BUCKET_NAME).remove([storagePath, thumbnailPath]);
 
                 if (databaseError.code === "23505") {
                     const winner = await findExistingByHash(fileHash);
@@ -665,6 +769,7 @@
                             existing: {
                                 ...winner,
                                 url: getPublicUrl(winner.storage_path),
+                                thumbnailUrl: getThumbnailUrl(winner.storage_path),
                                 year: detectYear(winner.file_name)
                             }
                         };
@@ -678,6 +783,7 @@
                 duplicate: false,
                 ...record,
                 url: getPublicUrl(storagePath),
+                thumbnailUrl: getThumbnailUrl(storagePath),
                 year: detectYear(file.name)
             };
         }
@@ -732,12 +838,75 @@
             input.value = "";
         });
 
+        generateThumbnailsButton.addEventListener("click", async () => {
+            if (!galleryItems.length) {
+                showMessage("There are no photos to process.");
+                return;
+            }
+
+            generateThumbnailsButton.disabled = true;
+            generateThumbnailsButton.classList.add("disabled");
+            let created = 0;
+            let alreadyPresent = 0;
+            const failures = [];
+
+            try {
+                for (let index = 0; index < galleryItems.length; index++) {
+                    const item = galleryItems[index];
+                    generateThumbnailsButton.textContent = `Preparing ${index + 1}/${galleryItems.length}...`;
+
+                    try {
+                        const thumbnailUrl = getThumbnailUrl(item.storage_path, Date.now());
+                        const thumbnailResponse = await fetch(thumbnailUrl, { method: "HEAD" });
+                        if (thumbnailResponse.ok) {
+                            alreadyPresent++;
+                            continue;
+                        }
+
+                        const originalResponse = await fetch(item.url);
+                        if (!originalResponse.ok) {
+                            throw new Error(`Original download failed (${originalResponse.status}).`);
+                        }
+                        const thumbnail = await createThumbnail(await originalResponse.blob());
+                        const { error } = await supabaseClient.storage
+                            .from(BUCKET_NAME)
+                            .upload(getThumbnailPath(item.storage_path), thumbnail, {
+                                cacheControl: "31536000",
+                                upsert: false,
+                                contentType: "image/webp"
+                            });
+
+                        if (error) throw new Error(error.message);
+                        item.thumbnailUrl = getThumbnailUrl(item.storage_path, Date.now());
+                        created++;
+                    } catch (error) {
+                        failures.push(`${item.file_name}: ${error.message}`);
+                    }
+                }
+            } finally {
+                generateThumbnailsButton.disabled = false;
+                generateThumbnailsButton.classList.remove("disabled");
+                generateThumbnailsButton.textContent = "Generate missing thumbnails";
+            }
+
+            sortGallery(sortSelect.value);
+            const summary = `${created} created, ${alreadyPresent} already existed${failures.length ? `, ${failures.length} failed` : ""}.`;
+            showMessage(
+                failures.length ? `${summary} ${failures.slice(0, 3).join(" | ")}` : summary,
+                failures.length ? "error" : "success"
+            );
+        });
+
         function openImage(url, fileName) {
             zoomedImage.src = url;
             zoomedImage.alt = fileName || "Selected image";
             imageModal.classList.remove("hidden");
             document.body.style.overflow = "hidden";
         }
+
+        zoomedImage.addEventListener("error", () => {
+            showMessage("Could not load the original image.", "error");
+        });
 
         function closeImage() {
             imageModal.classList.add("hidden");

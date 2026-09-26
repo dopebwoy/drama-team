@@ -409,6 +409,66 @@
             font: 12px system-ui, sans-serif;
         }
 
+        .activity-panel {
+            margin: 24px 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px;
+        }
+
+        .activity-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .activity-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .activity-header span {
+            color: var(--muted);
+            font: 11px/1.4 system-ui, sans-serif;
+        }
+
+        .activity-table-wrap {
+            overflow-x: auto;
+        }
+
+        .activity-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 680px;
+            font: 13px system-ui, sans-serif;
+        }
+
+        .activity-table th,
+        .activity-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+        }
+
+        .activity-table th {
+            color: var(--muted);
+            font-weight: 600;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .activity-table td {
+            color: #f0f0f0;
+        }
+
+        .activity-empty {
+            color: var(--muted);
+            padding: 14px 0;
+            font: 13px system-ui, sans-serif;
+        }
+
         @media (max-width: 850px) {
             .stats { grid-template-columns: repeat(2, 1fr); }
             .toolbar { grid-template-columns: 1fr 1fr; }
@@ -425,6 +485,7 @@
             .photo-body { padding: 8px; }
             .photo-actions { flex-direction: column; }
             .selection-bar { align-items: flex-start; flex-direction: column; }
+            .activity-header { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
@@ -476,6 +537,26 @@
             <div class="stat">
                 <div class="stat-label">MISSING FILES</div>
                 <div class="stat-value" id="missingCount">—</div>
+            </div>
+        </section>
+
+        <section class="activity-panel" aria-label="User activity report">
+            <div class="activity-header">
+                <h2>Recent logins</h2>
+                <span>Last 100 entries</span>
+            </div>
+            <div class="activity-table-wrap">
+                <table class="activity-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Role</th>
+                            <th>Login time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activityTableBody"></tbody>
+                </table>
             </div>
         </section>
 
@@ -557,6 +638,7 @@
         const storageUsed = document.getElementById("storageUsed");
         const duplicateCount = document.getElementById("duplicateCount");
         const missingCount = document.getElementById("missingCount");
+        const activityTableBody = document.getElementById("activityTableBody");
 
         const selectionBar = document.getElementById("selectionBar");
         const selectedCount = document.getElementById("selectedCount");
@@ -600,9 +682,9 @@
         }
 
         function formatDate(value) {
-            if (!value) return "Unknown date";
+            if (!value) return "—";
             const date = new Date(value);
-            if (Number.isNaN(date.getTime())) return "Unknown date";
+            if (Number.isNaN(date.getTime())) return "—";
             return date.toLocaleString();
         }
 
@@ -611,6 +693,67 @@
                 .from(BUCKET_NAME)
                 .getPublicUrl(storagePath);
             return data.publicUrl;
+        }
+
+        function readLoginLogs() {
+            try {
+                const localLogs = JSON.parse(localStorage.getItem("dtm_login_log") || "[]");
+                return Array.isArray(localLogs) ? localLogs : [];
+            } catch (error) {
+                console.warn("Could not read local login logs:", error);
+                return [];
+            }
+        }
+
+        async function loadLoginLogsFromSupabase() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from("login_activity")
+                    .select("name, role, logged_in_at")
+                    .order("logged_in_at", { ascending: false })
+                    .limit(100);
+
+                if (!error && Array.isArray(data)) {
+                    localStorage.setItem("dtm_login_log", JSON.stringify(data));
+                    return data;
+                }
+
+                if (error) {
+                    console.warn("Supabase login query failed:", error.message);
+                }
+            } catch (error) {
+                console.warn("Could not query login_activity:", error);
+            }
+
+            return readLoginLogs();
+        }
+
+        function renderActivityTable() {
+            const logs = readLoginLogs();
+            const recent = [...logs]
+                .filter(log => log && (log.name || log.role || log.logged_in_at))
+                .slice(-100)
+                .reverse();
+
+            const tbody = document.getElementById("activityTableBody");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            if (!recent.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="activity-empty">No recent logins recorded yet.</td></tr>';
+                return;
+            }
+
+            recent.forEach((log, index) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${String(log.name || "Unknown").trim() || "Unknown"}</td>
+                    <td>${String(log.role || "member").trim() || "member"}</td>
+                    <td>${log.logged_in_at ? formatDate(log.logged_in_at) : "—"}</td>
+                `;
+                tbody.appendChild(row);
+            });
         }
 
         function getFilteredPhotos() {
@@ -670,9 +813,6 @@
             storageUsed.textContent = formatBytes(totalBytes);
 
             duplicateCount.textContent = calculateDuplicateCount(photos);
-
-            // This is checked as images load. Initially zero; failed images
-            // increment it in the card error handler.
             missingCount.textContent = document.querySelectorAll(".photo-frame .broken").length;
         }
 
@@ -779,12 +919,14 @@
                 gallery.appendChild(empty);
                 updateSelectionUI();
                 updateStats();
+                renderActivityTable();
                 return;
             }
 
             visible.forEach(photo => gallery.appendChild(createCard(photo)));
             updateSelectionUI();
             updateStats();
+            renderActivityTable();
         }
 
         async function loadPhotos() {
@@ -807,13 +949,13 @@
 
             photos = data || [];
 
-            // Keep selection only for records that still exist.
             const existingIds = new Set(photos.map(photo => photo.id));
             selectedIds = new Set(
                 [...selectedIds].filter(id => existingIds.has(id))
             );
 
             render();
+            renderActivityTable();
         }
 
         function askDelete(ids) {
@@ -844,15 +986,6 @@
             const paths = records.map(photo => photo.storage_path).filter(Boolean);
 
             try {
-                /*
-                 * IMPORTANT:
-                 * Delete the database rows FIRST.
-                 *
-                 * The store page reads from public.photos. If Storage is deleted
-                 * first and the DB delete is rejected by RLS, the store is left
-                 * showing "Image unavailable". Removing the DB rows first makes
-                 * the frontend disappear immediately and avoids stale records.
-                 */
                 const { error: databaseError } = await supabaseClient
                     .from("photos")
                     .delete()
@@ -862,7 +995,6 @@
                     throw new Error(`Database deletion failed: ${databaseError.message}`);
                 }
 
-                // Immediately remove deleted records from this page.
                 selectedIds = new Set(
                     [...selectedIds].filter(id => !ids.includes(id))
                 );
@@ -870,10 +1002,6 @@
                 closeConfirm();
                 render();
 
-                // Now remove the physical Storage objects.
-                // If this fails, the DB/frontend are already clean; the manager
-                // reports the remaining Storage cleanup instead of creating a
-                // broken gallery record.
                 if (paths.length) {
                     const { error: storageError } = await supabaseClient
                         .storage
@@ -916,7 +1044,7 @@
                 return response.ok;
             } catch (error) {
                 console.warn("Could not verify Storage object:", path, error);
-                return null; // unknown, don't delete automatically
+                return null;
             }
         }
 
@@ -933,8 +1061,6 @@
             let unknown = 0;
 
             try {
-                // Do this in small batches so a large gallery does not create
-                // hundreds of simultaneous network requests.
                 for (let i = 0; i < photos.length; i += 5) {
                     const batch = photos.slice(i, i + 5);
                     const results = await Promise.all(
@@ -1019,132 +1145,93 @@
                         throw new Error(`${file.name} is not an image.`);
                     }
 
-                    if (file.size > 10 * 1024 * 1024) {
-                        throw new Error(`${file.name} is larger than 10 MB.`);
-                    }
+                    const hash = await sha256File(file);
 
-                    const fileHash = await sha256File(file);
-
-                    // Check before touching Storage.
-                    const { data: existing, error: lookupError } = await supabaseClient
+                    const { data: existing } = await supabaseClient
                         .from("photos")
-                        .select("id, file_name, storage_path, file_hash")
-                        .eq("file_hash", fileHash)
-                        .maybeSingle();
-
-                    if (lookupError) throw lookupError;
+                        .select("id, storage_path")
+                        .eq("file_hash", hash)
+                        .single();
 
                     if (existing) {
                         duplicates++;
+                        showToast(`Duplicate found: ${file.name}`, "error");
                         continue;
                     }
 
-                    storagePath =
-                        `${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]+/g, "-")}`;
+                    const { data, error: uploadError } = await supabaseClient
+                        .storage
+                        .from(BUCKET_NAME)
+                        .upload(`uploads/${file.name}`, file, {
+                            cacheControl: '3600',
+                            upsert: false
+                        });
 
-                    const { data: uploadedFile, error: storageError } =
-                        await supabaseClient.storage
-                            .from(BUCKET_NAME)
-                            .upload(storagePath, file, {
-                                cacheControl: "3600",
-                                upsert: false,
-                                contentType: file.type
-                            });
+                    if (uploadError) {
+                        throw new Error(`Storage upload failed: ${uploadError.message}`);
+                    }
 
-                    if (storageError) throw storageError;
+                    storagePath = data.path;
 
                     const { error: dbError } = await supabaseClient
                         .from("photos")
                         .insert({
                             file_name: file.name,
-                            storage_path: uploadedFile.path,
-                            uploaded_by: "manager",
+                            storage_path: storagePath,
+                            file_hash: hash,
                             file_size: file.size,
-                            file_hash: fileHash
+                            uploaded_by: "admin", // Replace with actual uploader info
+                            created_at: new Date().toISOString()
                         });
 
                     if (dbError) {
-                        await supabaseClient.storage.from(BUCKET_NAME).remove([storagePath]);
-
-                        // 23505 = unique hash race: somebody else uploaded
-                        // the same image while this upload was running.
-                        if (dbError.code === "23505") {
-                            duplicates++;
-                            continue;
-                        }
-
-                        throw dbError;
+                        throw new Error(`Database insert failed: ${dbError.message}`);
                     }
 
                     uploaded++;
                 } catch (error) {
-                    if (storagePath) {
-                        try {
-                            await supabaseClient.storage
-                                .from(BUCKET_NAME)
-                                .remove([storagePath]);
-                        } catch (cleanupError) {
-                            console.warn("Could not clean failed upload:", cleanupError);
-                        }
-                    }
-
                     console.error(error);
-                    failures.push(`${file.name}: ${error.message}`);
+                    failures.push(file.name);
                 }
             }
 
             uploadButton.disabled = false;
             uploadButton.textContent = "Upload photos";
-            fileInput.value = "";
+
+            if (uploaded) {
+                showToast(
+                    `${uploaded} photo${uploaded === 1 ? "" : "s"} uploaded successfully.`,
+                    "success"
+                );
+            }
+
+            if (duplicates) {
+                showToast(
+                    `${duplicates} duplicate${duplicates === 1 ? "" : "s"} skipped.`,
+                    "info"
+                );
+            }
+
+            if (failures.length) {
+                showToast(
+                    `Failed to upload: ${failures.join(", ")}`,
+                    "error"
+                );
+            }
 
             await loadPhotos();
-
-            const summary = [];
-            if (uploaded) summary.push(`${uploaded} uploaded`);
-            if (duplicates) summary.push(`${duplicates} duplicate${duplicates === 1 ? "" : "s"} skipped`);
-            if (failures.length) summary.push(`${failures.length} failed`);
-
-            showToast(
-                `${summary.join(" • ")}${failures.length ? `: ${failures.join(" | ")}` : ""}`,
-                failures.length ? "error" : "success"
-            );
         }
 
-        searchInput.addEventListener("input", render);
-        sortSelect.addEventListener("change", render);
-
-        refreshButton.addEventListener("click", loadPhotos);
-        cleanupButton.addEventListener("click", cleanMissingRecords);
-
-        uploadButton.addEventListener("click", () => fileInput.click());
-
-        fileInput.addEventListener("change", event => {
-            uploadFiles(Array.from(event.target.files));
-        });
-
-        clearSelection.addEventListener("click", () => {
-            selectedIds.clear();
-            updateSelectionUI();
-        });
-
-        deleteSelected.addEventListener("click", () => {
-            askDelete([...selectedIds]);
-        });
-
-        cancelDelete.addEventListener("click", closeConfirm);
-        confirmDelete.addEventListener("click", () => deletePhotos(pendingDeleteIds));
-
-        confirmModal.addEventListener("click", event => {
-            if (event.target === confirmModal) closeConfirm();
-        });
-
-        document.addEventListener("keydown", event => {
-            if (event.key === "Escape" && !confirmModal.classList.contains("hidden")) {
-                closeConfirm();
+        async function init() {
+            await loadPhotos();
+            const remoteLogs = await loadLoginLogsFromSupabase();
+            if (remoteLogs && remoteLogs.length) {
+                localStorage.setItem("dtm_login_log", JSON.stringify(remoteLogs.slice(-500)));
             }
-        });
+            renderActivityTable();
+        }
 
-        loadPhotos();
+        init();
     </script>
 </body>
 </html>

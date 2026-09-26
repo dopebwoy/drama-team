@@ -51,8 +51,8 @@
         }
 
         .nav-button:hover {
-            opacity: .85;
-            transform: translateY(-1px);
+            opacity: 1;
+            transform: none;
         }
 
         #umukomite-button {
@@ -183,12 +183,12 @@
             border-radius: 10px;
             background: var(--surface-2);
             border: 1px solid #2e2e2e;
-            transition: transform .2s ease, border-color .2s ease;
+            transition: none;
         }
 
         .gallery-item:hover {
-            transform: translateY(-2px);
-            border-color: #666;
+            transform: none;
+            border-color: #2e2e2e;
         }
 
         .image-frame {
@@ -205,10 +205,10 @@
             height: 100%;
             object-fit: cover;
             cursor: pointer;
-            transition: transform .25s ease;
+            transition: none;
         }
 
-        .gallery-item:hover .gallery-image { transform: scale(1.025); }
+        .gallery-item:hover .gallery-image { transform: none; }
 
         .file-info {
             padding: 2px 10px 10px;
@@ -356,12 +356,6 @@
             </div>
 
             <div class="tool">
-                <button type="button" class="input-button" id="generateThumbnailsButton">
-                    Generate missing thumbnails
-                </button>
-            </div>
-
-            <div class="tool">
                 <label for="sort">Sort</label>
                 <select id="sort">
                     <option value="new">New</option>
@@ -416,7 +410,6 @@
         const zoomedImage = document.getElementById("zoomedImage");
         const closeButton = document.getElementById("close");
         const logoutButton = document.getElementById("logout-button");
-        const generateThumbnailsButton = document.getElementById("generateThumbnailsButton");
         const great = document.getElementById("great");
         const title = document.getElementById("title");
 
@@ -448,7 +441,8 @@
                 }
                 const status = JSON.parse(savedStatus);
                 if (Array.isArray(status)) {
-                    title.textContent = status[2] ?? "";
+                    const savedName = status[2] ?? status[1] ?? "";
+                    title.textContent = savedName;
                     if (status[0] === "new") {
                         great.textContent = "Hey ☺️";
                         title.classList.add("new");
@@ -499,9 +493,8 @@
             return `${storagePath}.thumb.webp`;
         }
 
-        function getThumbnailUrl(storagePath, cacheBust = "") {
-            const url = getPublicUrl(getThumbnailPath(storagePath));
-            return cacheBust ? `${url}?v=${encodeURIComponent(cacheBust)}` : url;
+        function getThumbnailUrl(storagePath) {
+            return getPublicUrl(getThumbnailPath(storagePath));
         }
 
         async function createThumbnail(blob) {
@@ -836,65 +829,6 @@
             uploadLabel.classList.remove("disabled");
             uploadLabel.textContent = "Upload";
             input.value = "";
-        });
-
-        generateThumbnailsButton.addEventListener("click", async () => {
-            if (!galleryItems.length) {
-                showMessage("There are no photos to process.");
-                return;
-            }
-
-            generateThumbnailsButton.disabled = true;
-            generateThumbnailsButton.classList.add("disabled");
-            let created = 0;
-            let alreadyPresent = 0;
-            const failures = [];
-
-            try {
-                for (let index = 0; index < galleryItems.length; index++) {
-                    const item = galleryItems[index];
-                    generateThumbnailsButton.textContent = `Preparing ${index + 1}/${galleryItems.length}...`;
-
-                    try {
-                        const thumbnailUrl = getThumbnailUrl(item.storage_path, Date.now());
-                        const thumbnailResponse = await fetch(thumbnailUrl, { method: "HEAD" });
-                        if (thumbnailResponse.ok) {
-                            alreadyPresent++;
-                            continue;
-                        }
-
-                        const originalResponse = await fetch(item.url);
-                        if (!originalResponse.ok) {
-                            throw new Error(`Original download failed (${originalResponse.status}).`);
-                        }
-                        const thumbnail = await createThumbnail(await originalResponse.blob());
-                        const { error } = await supabaseClient.storage
-                            .from(BUCKET_NAME)
-                            .upload(getThumbnailPath(item.storage_path), thumbnail, {
-                                cacheControl: "31536000",
-                                upsert: false,
-                                contentType: "image/webp"
-                            });
-
-                        if (error) throw new Error(error.message);
-                        item.thumbnailUrl = getThumbnailUrl(item.storage_path, Date.now());
-                        created++;
-                    } catch (error) {
-                        failures.push(`${item.file_name}: ${error.message}`);
-                    }
-                }
-            } finally {
-                generateThumbnailsButton.disabled = false;
-                generateThumbnailsButton.classList.remove("disabled");
-                generateThumbnailsButton.textContent = "Generate missing thumbnails";
-            }
-
-            sortGallery(sortSelect.value);
-            const summary = `${created} created, ${alreadyPresent} already existed${failures.length ? `, ${failures.length} failed` : ""}.`;
-            showMessage(
-                failures.length ? `${summary} ${failures.slice(0, 3).join(" | ")}` : summary,
-                failures.length ? "error" : "success"
-            );
         });
 
         function openImage(url, fileName) {

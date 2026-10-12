@@ -4,117 +4,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drama Team offcial website</title>
-        <meta name="description"
-          content="drama team website help student who were at es rugabano and join drama team family to get the images from the family">
-            <meta name="keywords"
-          content="drama team karongi rugabano, drama team Rwanda, ES rugabano drama team, Drama Team family">
-          <meta name="author" content="Drama Team">
-          <meta name="robots" content="index, follow">
+    <title>Drama Team Official Website</title>
+    <meta name="description"
+        content="Drama Team website helps students and family members from ES Rugabano stay connected and access drama team gallery images.">
+    <meta name="keywords"
+        content="drama team karongi rugabano, drama team Rwanda, ES rugabano drama team, Drama Team family">
+    <meta name="author" content="Drama Team">
+    <meta name="robots" content="index, follow">
+    <link rel="icon" type="image/icon" href="photos/logo.png">
+    <style>
+        :root {
+            --bg-dark: #0d1a17;
+            --bg-soft: #152a26;
+            --panel: rgba(14, 24, 22, 0.72);
+            --panel-strong: rgba(10, 18, 17, 0.9);
+            --gold: #e6c989;
+            --gold-soft: #f4ddb0;
+            --text: #f3efe7;
+            --muted: #dfe6e1;
+            --line: rgba(255, 255, 255, 0.12);
+            --accent: #7fe2d0;
+            --button: #a9d9c8;
+            --shadow: rgba(0, 0, 0, 0.34);
+        }
 
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            color: var(--text);
+            background:
+                linear-gradient(rgba(8, 18, 16, 0.72), rgba(8, 18, 16, 0.82)),
+                url('./photos/imageonindex.png') center/cover no-repeat fixed;
+            text-align: center;
+        }
+
+        .container {
+            width: min(1100px, 90%);
+            margin: 0 auto;
+        }
+
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(8px);
+            background: rgba(20, 29, 26, 0.7);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .nav-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 0;
+        }
+
+        .brand {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--gold-soft);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-links a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 1rem;
+            opacity: 0.9;
+            transition: color 0.2s ease, opacity 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--gold-soft);
+            opacity: 1;
+        }
+
+        .hero {
+            padding: 72px 0 30px;
+        }
+
+        .hero-panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 28px;
+            padding: 42px 28px;
+            box-shadow: 0 30px 60px var(--shadow);
+        }
+
+        .eyebrow {
+            display: inline-block;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(127, 226, 208, 0.1);
+            border: 1px solid rgba(127, 226, 208, 0.25);
+            color: var(--accent);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            margin-bottom: 18px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2.3rem, 4vw, 4rem);
+            line-height: 1.08;
+        }
+
+        .highlight {
+            color: var(--gold);
+        }
+
+        .original-text {
+            color: var(--text);
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            margin-top: 18px;
+            line-height: 1.8;
+        }
+
+        .hero-actions {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            margin-top: 28px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 28px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            border: none;
+            cursor: pointer;
+            font-family: Georgia, 'Times New Roman', serif;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.96;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gold), var(--gold-soft));
+            color: #17130d;
+            box-shadow: 0 12px 18px rgba(230, 201, 137, 0.25);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--line);
+            color: var(--text);
+        }
+
+        footer {
+            padding: 30px 0 50px;
+            color: var(--muted);
+            font-size: 0.96rem;
+            text-align: center;
+        }
+
+        @media (max-width: 700px) {
+            .nav-inner {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .nav-links {
+                gap: 14px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .hero-panel {
+                padding: 28px 18px;
+            }
+
+            .hero-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
-<link rel="icon"  type="image/icon" href="photos/logo.png">
-<style>
-    body {
-        background-image: url('./photos/imageonindex.png');
-        background-position: top;
-        background-repeat: no-repeat;
-        background-size: cover;
-        font-size: 20px;
-        font-family: Georgia, 'Times New Roman', Times, serif;
-        text-align: center;
 
-        margin: 0px;
-
-       color: rgb(206, 184, 158);
-
-    }
-
-    nav {
-
-        background-color: rgb(218, 218, 218);
-        border-radius: 10px;
-    }
-
-
-    ul {
-        display: flex;
-        justify-content: flex-start;
-        gap: 50%;
-        list-style: none;
-    }
-
-    a {
-
-        color: black;
-        font-weight: lighter;
-    }
-
-    a {
-        text-decoration: none;
-
-    }
-
-    div {
-
-        border: 1px solid rgb(82, 82, 82);
-        border-radius: 20px;
-        padding: 60px 0px;
-
-
-    }
-
-    fieldset {
-        border: 1px solid rgb(19, 19, 19);
-        border-radius: 50%;
-        box-shadow: 20px 0px 10px 1px rgba(37, 39, 165, 0.4);
-        background: rgba(64, 66, 66, 0.2);
-        backdrop-filter: blur(3px);
-
-
-
-    }
-   
-    p{
-        box-shadow: 20px 0px 10px 1px rgba(75, 78, 238, 0.4);
-        
-        
-    }
-    button{
-      padding: 5px 30px;  
-      border-radius: 10px;
-      background-color: rgb(157, 157, 173);
-    }
-</style>
-
-<body class="body">
-    <section>
-        <nav id="nav">
-            <ul>
+<body>
+    <nav>
+        <div class="container nav-inner">
+            <div class="brand">Drama Team</div>
+            <ul class="nav-links">
                 <li><a href="about.html">About</a></li>
                 <li><a href="contact.html">Contact</a></li>
             </ul>
-        </nav>
-        <br><br>
-        <div id="container">
-            <fieldset>
-                <h2 id="welcome">welcome to Drama Team gallery-image store platfoam</h2>
-            </fieldset><br>
-            <p id="first-time">guardian of the heaven , we are blessed partners💚 </p>
-            <br>
-            <a href="login.html"><button id="login" title="Login to drama team ">Login</button></a></div>
-            
-    </section>
+        </div>
+    </nav>
+
+    <main class="container">
+        <section class="hero">
+            <div class="hero-panel">
+                <span class="eyebrow">Welcome</span>
+                <h1>Welcome to <span class="highlight">Drama Team</span> gallery-image store platform</h1>
+                <p class="original-text">guardian of the heaven , we are blessed partners💚</p>
+
+                <div class="hero-actions">
+                    <a href="login.html" class="btn btn-primary" id="login" title="Login to drama team">Login</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        © 2026 Drama Team | blessed partners💚.
+    </footer>
+
     <script>
-        const password="drama"
-        localStorage.setItem('password',password)
-        let active = localStorage.getItem('active')
-        if(active=== 'active'){
-            window.location.href = 'store.html'
+        const password = "drama";
+        localStorage.setItem('password', password);
+        let active = localStorage.getItem('active');
+        if (active === 'active') {
+            window.location.href = 'store.html';
         }
-       
     </script>
-    
 </body>
- 
+
 </html>

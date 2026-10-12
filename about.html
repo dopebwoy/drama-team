@@ -3,9 +3,259 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>about</title>
+    <title>About | Drama Team</title>
+    <style>
+        :root {
+            --bg: #0b1220;
+            --bg-2: #111827;
+            --panel: rgba(17, 24, 39, 0.75);
+            --panel-strong: rgba(12, 18, 30, 0.9);
+            --text: #f5efe6;
+            --muted: #d8d0c8;
+            --gold: #e9c46a;
+            --accent: #4cc9f0;
+            --accent-2: #7dd3fc;
+            --line: rgba(255, 255, 255, 0.12);
+            --shadow: rgba(0, 0, 0, 0.35);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Georgia, 'Times New Roman', serif;
+            background: linear-gradient(rgba(11, 18, 32, 0.7), rgba(11, 18, 32, 0.8)),
+                        url('./photos/imageonindex.png') center/cover no-repeat fixed;
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            width: min(1100px, 90%);
+            margin: 0 auto;
+        }
+
+        nav {
+            background: rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid var(--line);
+            backdrop-filter: blur(6px);
+        }
+
+        .nav-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 0;
+        }
+
+        .brand {
+            font-size: 1.3rem;
+            font-weight: bold;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--gold);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 22px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.98rem;
+            transition: color 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-2);
+        }
+
+        .hero {
+            padding: 72px 0 40px;
+        }
+
+        .hero-box {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            box-shadow: 0 20px 45px var(--shadow);
+            padding: 48px 32px;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(76, 201, 240, 0.12);
+            border: 1px solid rgba(76, 201, 240, 0.3);
+            color: var(--accent-2);
+            font-size: 0.76rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2.1rem, 4vw, 4rem);
+            line-height: 1.1;
+        }
+
+        .highlight {
+            color: var(--gold);
+        }
+
+        .lead {
+            max-width: 760px;
+            font-size: 1.08rem;
+            line-height: 1.8;
+            color: var(--muted);
+            margin-top: 20px;
+        }
+
+        section {
+            padding: 18px 0 42px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--panel-strong);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 26px 22px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+        }
+
+        .card h3 {
+            margin: 0 0 12px;
+            color: var(--gold);
+            font-size: 1.3rem;
+        }
+
+        .card p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.8;
+            font-size: 0.98rem;
+        }
+
+        .mission {
+            margin-top: 12px;
+        }
+
+        .values {
+            list-style: none;
+            padding: 0;
+            margin: 18px 0 0;
+            display: grid;
+            gap: 14px;
+        }
+
+        .values li {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: var(--muted);
+        }
+
+        .values strong {
+            color: var(--text);
+        }
+
+        footer {
+            padding: 20px 0 50px;
+            color: var(--muted);
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 600px) {
+            .nav-inner {
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            .nav-links {
+                gap: 12px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .hero-box {
+                padding: 30px 18px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <H1>THIS PLATFORM IS BUILD</H1>
+    <nav>
+        <div class="container nav-inner">
+            <div class="brand">Drama Team</div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="store.html">Gallery</a>
+                <a href="contact.html">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container hero-box">
+            <span class="eyebrow">About us</span>
+            <h1>We are the <span class="highlight">Drama Team</span>, Guardina of the heaven , Blessed parteners.</h1>
+            <p class="lead">
+                Welcome to Drama Team. We are a family of young people who love music, dance, and worship through gospel songs.
+                We come together to share our talent, support one another, and celebrate our love for art and performance.
+            </p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section>
+            <div class="grid">
+                <article class="card">
+                    <h3>Our story</h3>
+                    <p>
+                        Drama Team is not only about dancing . It is also about unity, discipline, creativity, and friendship.
+                        We encourage each other to grow, learn, and express ourselves in a good and positive way.
+                    </p>
+                </article>
+
+                <article class="card">
+                    <h3>Our mission</h3>
+                    <p>
+                        We believe that through gospel music and dance, we can inspire people, spread joy, and bring hope to others.
+                        This platform was created to help our family share memories, pictures, and important moments from our journey together through images shared.
+                    </p>
+                </article>
+
+            </div>
+        </section>
+
+        <section class="mission">
+            <div class="card">
+                <h3>What we stand for</h3>
+                <ul class="values">
+                    <li><strong>Family:</strong> We support and care for one another.</li>
+                    <li><strong>Talent:</strong> We believe every person has something beautiful to share.</li>
+                    <li><strong>Unity:</strong> We grow stronger when we work together.</li>
+                    <li><strong>Worship:</strong> We use music and dance to glorify God and inspire others.</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        © 2026 Drama Team | blessed partners.
+    </footer>
 </body>
 </html>

@@ -1,58 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>contact and support</title>
-  <style>
-    body{
-        text-align: center;
-        background-image: url('./photos/backoncontact.jpg');
-        background-position: top;
-        background-size: cover;
-        color: rgb(255, 255, 255);
-    }
-    .blru{
-        background: rgba(2, 63, 57, 0.5);
-        margin: -.2cm  -.2cm;
-        padding: 0px 1cm;
-        padding-bottom: 8.4cm;
-        backdrop-filter: blur(4px);
-       
-    }
-    #explanation{
-        background-color: rgb(0, 62, 90);
-        border-radius: 40%;
-        padding: 30px;
-    }
-    button{
-        border-radius: 10px;
-        padding: 5px;
-         background-color: rgb(0, 103, 151);
-    }
-  </style>
+    <title>Contact | Drama Team</title>
+    <style>
+        :root{
+            --bg: linear-gradient(rgba(11,18,32,0.7), rgba(11,18,32,0.8)), url('./photos/backoncontact.jpg') center/cover no-repeat fixed;
+            --panel: rgba(17,24,39,0.75);
+            --muted: #d8d0c8;
+            --accent: #4cc9f0;
+            --gold: #e9c46a;
+            --line: rgba(255,255,255,0.08);
+        }
+        *{box-sizing: border-box}
+        body{
+            margin:0; font-family: Georgia, 'Times New Roman', serif; color: #f5efe6; background: var(--bg);
+        }
+        .container{width:min(1100px,90%); margin:0 auto; padding:28px 0}
+        nav{display:flex; justify-content:space-between; align-items:center; padding:10px 0}
+        nav a{color:var(--gold); text-decoration:none}
+
+        .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:28px; box-shadow:0 12px 30px rgba(0,0,0,0.35)}
+        h1{margin:0 0 10px; font-size: clamp(1.4rem, 3vw, 2.2rem)}
+        p.lead{color:var(--muted); margin:10px 0 18px; line-height:1.6}
+
+        .grid{display:grid; grid-template-columns:1fr 320px; gap:20px}
+        .field{display:flex; flex-direction:column; gap:8px; margin-bottom:12px}
+        input[type="text"], input[type="email"], textarea{padding:10px; border-radius:8px; border:1px solid var(--line); background:transparent; color:inherit; resize:vertical}
+        textarea{min-height:120px}
+
+        .btn{display:inline-block; padding:10px 16px; border-radius:8px; background:var(--accent); color:#072027; font-weight:700; border:0; cursor:pointer}
+
+        .info{background:rgba(255,255,255,0.02); border:1px solid var(--line); padding:16px; border-radius:10px; color:var(--muted)}
+        .muted{font-size:0.95rem; color:var(--muted)}
+
+        @media (max-width:880px){.grid{grid-template-columns:1fr} nav{justify-content:center} .container{padding:18px}}
+    </style>
 </head>
-
 <body>
-    
-        <div class="blru">
-            <div class="container">
-                <nav><a href="index.html">⬅️back home</a></nav><br>
-                <h3>get in tauch with us</h3>
-                <br>
-                <p id="?">have a problem ? <br>send email <a
-                        href="mailto:niyorugiraseverien7@gmail.com"><br><br><button>send
-                            mail</button></a></p>
-                <br><br>
-                <p id="explanation">some pictures failing to upload my be due to the phone u are using . kindly during</p>
-                    <p>uploading make sure u are uploading a file not greater than 10MBs/1photo .
-                <br>multiple uploads are allowed ; upload up to 100 images at once <br>
-               <p>video are not allowed , if u upload selected photos but one video included the upload my fail</p>
+    <div class="container">
+        <nav>
+            <a href="index.html">⬅️ Back home</a>
+            <div>
+                <a href="about.html">About</a> &nbsp;•&nbsp; <a href="store.html">Gallery</a>
+            </div>
+        </nav>
 
+        <div class="card">
+            <h1>Contact & Support</h1>
+            <p class="lead">Need help? Tell us briefly what happened and we will reply by email. For upload problems, follow the short tips on the right.</p>
+
+            <div class="grid">
+                <form action="mailto:niyorugiraseverien7@gmail.com" method="post" enctype="text/plain">
+                    <div class="field">
+                        <label for="name">Your name</label>
+                        <input id="name" name="name" type="text" placeholder="e.g. Alice" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="email">Your email</label>
+                        <input id="email" name="email" type="email" placeholder="you@example.com" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="message">Message</label>
+                        <textarea id="message" name="message" placeholder="Describe the problem or question" required></textarea>
+                    </div>
+
+                    <div class="field">
+                        <button type="submit" class="btn">Send email</button>
+                    </div>
+                </form>
+
+                <aside class="info">
+                    <h3 style="margin-top:0;color:var(--gold)">Quick help</h3>
+                    <p class="muted"><strong>Upload rules</strong></p>
+                    <ul class="muted">
+                        <li>Only photos are allowed. Videos may fail to upload.</li>
+                        <li>Max file size: 10 MB per photo. Smaller files upload faster.</li>
+                        <li>You can select many photos at once (up to 100).</li>
+                        <li>If one file is a video, the whole upload might fail—remove videos first.</li>
+                    </ul>
+                    <p class="muted" style="margin-top:12px"><strong>Need urgent help?</strong><br>Send an email to <a href="mailto:niyorugiraseverien7@gmail.com" style="color:var(--accent)">niyorugiraseverien7@gmail.com</a> or contact 0785609646</p>
+                    <p class="muted" style="margin-top:8px">If email does not open, copy the address and send from your mail app.</p>
+                </aside>
             </div>
         </div>
-
+    </div>
 </body>
-
 </html>

@@ -458,7 +458,7 @@
         let currentStoragePath = "";
         let currentFileName = "";
 
-        const DAILY_ROOM_URL = "https://drama-team-family.daily.co/drama-team-family";
+        const MEETING_URL = "meeting.html";
 
         function showMessage(message, type = "") {
             let box = document.getElementById("statusMessage");
@@ -479,8 +479,7 @@
 
         if (startMeetingButton) {
             startMeetingButton.addEventListener("click", () => {
-                window.open(DAILY_ROOM_URL, "_blank", "noopener,noreferrer");
-                showMessage("Meeting room opened. Share the link with members.", "success");
+                window.location.href = MEETING_URL;
             });
         }
 

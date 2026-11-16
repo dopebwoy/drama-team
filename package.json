@@ -1,0 +1,16 @@
+{
+  "name": "drama-team-family-site",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs",
+    "test": "node --test",
+    "test:livekit": "node scripts/check-livekit.mjs"
+  },
+  "dependencies": {
+    "livekit-server-sdk": "^2.19.2"
+  }
+}

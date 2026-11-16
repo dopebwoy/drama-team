@@ -666,12 +666,11 @@
         let pendingDeleteIds = [];
         let toastTimer;
 
-        const DAILY_ROOM_URL = "https://drama-team-family.daily.co/drama-team-family";
+        const MEETING_URL = "meeting.html";
 
         if (startMeetingButton) {
             startMeetingButton.addEventListener("click", () => {
-                window.open(DAILY_ROOM_URL, "_blank", "noopener,noreferrer");
-                showToast("Meeting room opened.", "success");
+                window.location.href = MEETING_URL;
             });
         }
 

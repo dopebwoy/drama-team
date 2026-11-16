@@ -7,9 +7,6 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), {
 
 export default async function handler(request) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405);
-  if (!process.env.MANAGER_SESSION_SECRET || !process.env.UMUKOMITE_PASSWORD) {
-    return json({ error: 'Manager sign-in is not configured on the server.' }, 503);
-  }
 
   let body;
   try { body = await request.json(); }

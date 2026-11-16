@@ -1,5 +1,4 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { generateVAPIDKeys } from 'web-push';
@@ -21,12 +20,6 @@ if (!getValue('VAPID_PUBLIC_KEY') || !getValue('VAPID_PRIVATE_KEY')) {
   values.set('VAPID_PRIVATE_KEY', keys.privateKey);
 }
 if (!getValue('VAPID_SUBJECT')) values.set('VAPID_SUBJECT', 'mailto:you@example.com');
-if (!getValue('MANAGER_SESSION_SECRET') || getValue('MANAGER_SESSION_SECRET').length < 32) {
-  values.set('MANAGER_SESSION_SECRET', randomBytes(32).toString('base64url'));
-}
-if (!getValue('UMUKOMITE_PASSWORD')) {
-  values.set('UMUKOMITE_PASSWORD', randomBytes(24).toString('base64url'));
-}
 for (const [name, value] of values) {
   const index = lines.findIndex(line => line.startsWith(`${name}=`));
   const setting = `${name}=${value}`;
@@ -34,4 +27,4 @@ for (const [name, value] of values) {
   else lines[index] = setting;
 }
 await writeFile(envPath, `${lines.join('\n')}\n`, 'utf8');
-console.log('Local push and manager credentials are ready in the ignored .env file. Existing keys were preserved; no secret values were printed.');
+console.log('Local VAPID credentials are ready in the ignored .env file. Existing keys were preserved; no secret values were printed.');

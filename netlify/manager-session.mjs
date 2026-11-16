@@ -1,13 +1,12 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-function secret() {
-  const value = process.env.MANAGER_SESSION_SECRET?.trim();
-  if (!value || value.length < 32) throw new Error('Manager sessions are not configured on the server.');
-  return value;
-}
+const MANAGER_PASSWORD = 'umu7.2026';
+const SESSION_SECRET = createHmac('sha256', 'Drama Team Family manager session v1')
+  .update(MANAGER_PASSWORD)
+  .digest('base64url');
 
 function sign(value) {
-  return createHmac('sha256', secret()).update(value).digest('base64url');
+  return createHmac('sha256', SESSION_SECRET).update(value).digest('base64url');
 }
 
 function constantTimeEqual(left, right) {
@@ -40,9 +39,8 @@ export function verifyManagerSession(token) {
 }
 
 export function isManagerPasswordValid(candidate) {
-  const expected = process.env.UMUKOMITE_PASSWORD;
-  if (typeof candidate !== 'string' || !expected) return false;
+  if (typeof candidate !== 'string') return false;
   const a = Buffer.from(candidate);
-  const b = Buffer.from(expected);
+  const b = Buffer.from(MANAGER_PASSWORD);
   return a.length === b.length && timingSafeEqual(a, b);
 }

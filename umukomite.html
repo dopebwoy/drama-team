@@ -513,6 +513,7 @@
             <a href="store.html">
                 <button class="secondary-button" type="button">Gallery</button>
             </a>
+            <button class="primary-button" type="button" id="startMeetingButton">Start Meeting</button>
             <a href="store.html">
                 <button class="danger-button" type="button" id="logoutButton">Log Out</button>
             </a>
@@ -641,6 +642,7 @@
         const cleanupButton = document.getElementById("cleanupButton");
         const uploadButton = document.getElementById("uploadButton");
         const fileInput = document.getElementById("fileInput");
+        const startMeetingButton = document.getElementById("startMeetingButton");
 
         const totalPhotos = document.getElementById("totalPhotos");
         const storageUsed = document.getElementById("storageUsed");
@@ -663,6 +665,15 @@
         let selectedIds = new Set();
         let pendingDeleteIds = [];
         let toastTimer;
+
+        const DAILY_ROOM_URL = "https://drama-team-family.daily.co/drama-team-family";
+
+        if (startMeetingButton) {
+            startMeetingButton.addEventListener("click", () => {
+                window.open(DAILY_ROOM_URL, "_blank", "noopener,noreferrer");
+                showToast("Meeting room opened.", "success");
+            });
+        }
 
         function showToast(message, type = "") {
             toast.textContent = message;

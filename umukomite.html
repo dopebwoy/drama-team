@@ -1432,6 +1432,29 @@
             await loadPhotos();
         }
 
+        clearSelection.addEventListener("click", () => {
+            selectedIds.clear();
+            updateSelectionUI();
+        });
+
+        deleteSelected.addEventListener("click", () => {
+            askDelete([...selectedIds]);
+        });
+
+        cancelDelete.addEventListener("click", closeConfirm);
+
+        confirmDelete.addEventListener("click", () => {
+            deletePhotos(pendingDeleteIds);
+        });
+
+        confirmModal.addEventListener("click", event => {
+            if (event.target === confirmModal) closeConfirm();
+        });
+
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && !confirmModal.classList.contains("hidden")) closeConfirm();
+        });
+
         async function init() {
             await loadPhotos();
             const remoteLogs = await loadLoginLogsFromSupabase();

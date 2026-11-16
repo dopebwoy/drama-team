@@ -47,9 +47,9 @@
 </head>
 <body>
   <main class="shell">
-    <header><strong>Drama Team Family</strong><a href="index.html">â† Back home</a></header>
+    <header><strong>Drama Team Family</strong><a href="index.html">🏠Back home</a></header>
     <section class="panel" aria-labelledby="title">
-      <div class="eyebrow">LiveKit room</div>
+      <div class="eyebrow">drama team family meet</div>
       <h1 id="title">Join the live meeting</h1>
       <p class="lead">Enter your name, then join with your camera and microphone. Your browser will ask for device access.</p>
       <form id="joinForm" class="join-form">
@@ -57,14 +57,14 @@
         <input id="participantName" name="name" maxlength="80" autocomplete="name" placeholder="Your name" required>
         <button id="joinButton" type="submit">Join room</button>
       </form>
-      <p id="status" role="status" aria-live="polite">Checking LiveKit settingsâ€¦</p>
+      <p id="status" role="status" aria-live="polite">Checking LiveKit settings</p>
       <div id="roomControls" class="controls" hidden>
         <button id="micButton" type="button" class="secondary">Mute microphone</button>
         <button id="cameraButton" type="button" class="secondary">Turn camera off</button>
         <button id="screenButton" type="button" class="secondary">Share screen</button>
         <button id="leaveButton" type="button">Leave room</button>
       </div>
-      <div class="room"><div id="participants" class="participants"><div class="empty">The room is empty. Join to start.</div></div></div>
+      <div class="room"><div id="participants" class="participants"><div class="empty">no one is live. Join to start.</div></div></div>
     </section>
   </main>
   <script type="module">
@@ -98,7 +98,7 @@
         const response = await fetch('/.netlify/functions/livekit-token');
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || 'LiveKit environment variables are missing.');
-        setStatus(`Ready to connect to room â€œ${result.roomName}â€.`, 'success');
+        setStatus(`Ready to connect to room ☺️${result.roomName}🔛.`, 'success');
       } catch (error) {
         setStatus(`${error.message} Start the local site with â€œnpm run devâ€ and set the server environment first.`, 'error');
       }
@@ -141,14 +141,14 @@
       const tile = tiles.get(participant.identity);
       if (tile) tile.remove();
       tiles.delete(participant.identity);
-      if (!tiles.size) participantsEl.innerHTML = '<div class="empty">Waiting for participantsâ€¦</div>';
+      if (!tiles.size) participantsEl.innerHTML = '<div class="empty">Waiting for participants😒</div>';
     }
 
     async function leaveRoom() {
       if (room) await room.disconnect();
       room = undefined;
       tiles.clear();
-      participantsEl.innerHTML = '<div class="empty">You left the room.</div>';
+      participantsEl.innerHTML = '<div class="empty">You left the room 😟.</div>';
       controls.hidden = true;
       form.hidden = false;
       joinButton.disabled = false;

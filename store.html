@@ -74,6 +74,12 @@
             color: white;
         }
 
+        #meeting-button,
+        #start-meeting-button {
+            background: #d3d3d3;
+            color: #111;
+        }
+
         header { padding: 10px 20px 20px; }
 
         header section {
@@ -356,6 +362,9 @@
         <a href="login.html">
             <button type="button" class="nav-button" id="umukomite-button">Umukomitte</button>
         </a>
+        <a href="meeting.html">
+            <button type="button" class="nav-button" id="meeting-button">Join Meeting</button>
+        </a>
         <a href="index.html">
             <button type="button" class="nav-button" id="logout-button">Log Out</button>
         </a>
@@ -378,6 +387,10 @@
 
     <main>
         <div id="tools">
+            <div class="tool">
+                <button type="button" class="input-button" id="start-meeting-button" title="Start live meeting for drama team family">Start Meeting</button>
+            </div>
+
             <div class="tool">
                 <input type="file" id="input" multiple accept="image/*" hidden>
                 <label for="input" class="input-button" id="uploadLabel" title="upload image to offcial drama team family as umufamiliye">Upload</label>
@@ -432,6 +445,7 @@
 
         const input = document.getElementById("input");
         const uploadLabel = document.getElementById("uploadLabel");
+        const startMeetingButton = document.getElementById("start-meeting-button");
         const container = document.getElementById("container");
         const sortSelect = document.getElementById("sort");
         const viewSelect = document.getElementById("view");
@@ -446,6 +460,8 @@
         let galleryItems = [];
         let currentStoragePath = "";
         let currentFileName = "";
+
+        const DAILY_ROOM_URL = "https://drama-team-family.daily.co/drama-team-family";
 
         function showMessage(message, type = "") {
             let box = document.getElementById("statusMessage");
@@ -462,6 +478,13 @@
                 type === "success" ? "#216e39" : "#222";
             clearTimeout(showMessage.timer);
             showMessage.timer = setTimeout(() => box.remove(), 5000);
+        }
+
+        if (startMeetingButton) {
+            startMeetingButton.addEventListener("click", () => {
+                window.open(DAILY_ROOM_URL, "_blank", "noopener,noreferrer");
+                showMessage("Meeting room opened. Share the link with members.", "success");
+            });
         }
 
         function loadUserStatus() {

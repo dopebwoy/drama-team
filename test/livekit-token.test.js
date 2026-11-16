@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import handler from '../netlify/functions/livekit-token.mjs';
+import { createManagerSession } from '../netlify/manager-session.mjs';
 
 const envKeys = ['LIVEKIT_URL', 'LIVEKIT_API_KEY', 'LIVEKIT_API_SECRET', 'LIVEKIT_ROOM_NAME'];
 const savedEnv = Object.fromEntries(envKeys.map(key => [key, process.env[key]]));
@@ -38,13 +39,60 @@ test('POST creates a short-lived token scoped to the configured room', async () 
   assert.equal(body.serverUrl, 'wss://unit-test.livekit.cloud');
   assert.equal(body.roomName, 'test-room');
   const claims = JSON.parse(Buffer.from(body.token.split('.')[1], 'base64url').toString('utf8'));
-  assert.match(claims.sub, /^Test_Guest-[a-f0-9]{8}$/);
+  assert.match(claims.sub, /^member-Test_Guest-[a-f0-9]{8}$/);
   assert.equal(claims.name, 'Test Guest');
   assert.equal(claims.video.room, 'test-room');
   assert.equal(claims.video.roomJoin, true);
   assert.equal(claims.video.canPublish, true);
   assert.equal(claims.video.canSubscribe, true);
   assert.ok(claims.exp > Math.floor(Date.now() / 1000));
+});
+
+test('Umukomite token requires and carries a verified manager role', async () => {
+  const previousSecret = process.env.MANAGER_SESSION_SECRET;
+  process.env.MANAGER_SESSION_SECRET = 'test-only-manager-session-secret-32-bytes';
+  try {
+    const sessionToken = createManagerSession('Test Manager');
+    const response = await handler(new Request('http://localhost/.netlify/functions/livekit-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'umukomite', managerSessionToken: sessionToken })
+    }));
+    const body = await response.json();
+    const claims = JSON.parse(Buffer.from(body.token.split('.')[1], 'base64url').toString('utf8'));
+    assert.equal(response.status, 200);
+    assert.match(claims.sub, /^manager-Test_Manager-[a-f0-9]{8}$/);
+    assert.equal(claims.metadata, JSON.stringify({ role: 'umukomite' }));
+    assert.equal(claims.video.roomAdmin, undefined);
+  } finally {
+    if (previousSecret === undefined) delete process.env.MANAGER_SESSION_SECRET;
+    else process.env.MANAGER_SESSION_SECRET = previousSecret;
+  }
+});
+
+test('Umukomite role without a valid session cannot mint a manager token', async () => {
+  const previousSecret = process.env.MANAGER_SESSION_SECRET;
+  try {
+    delete process.env.MANAGER_SESSION_SECRET;
+    const noSession = await handler(new Request('http://localhost/.netlify/functions/livekit-token', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'umukomite' })
+    }));
+    assert.equal(noSession.status, 401);
+
+    const unconfigured = await handler(new Request('http://localhost/.netlify/functions/livekit-token', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'umukomite', managerSessionToken: 'a.b.c' })
+    }));
+    assert.equal(unconfigured.status, 503);
+
+    process.env.MANAGER_SESSION_SECRET = 'test-only-manager-session-secret-32-bytes';
+    const unauthorized = await handler(new Request('http://localhost/.netlify/functions/livekit-token', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'umukomite' })
+    }));
+    assert.equal(unauthorized.status, 401);
+  } finally {
+    if (previousSecret === undefined) delete process.env.MANAGER_SESSION_SECRET;
+    else process.env.MANAGER_SESSION_SECRET = previousSecret;
+  }
 });
 
 test('POST rejects an empty participant name', async () => {

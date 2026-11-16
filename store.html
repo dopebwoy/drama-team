@@ -1,8 +1,14 @@
-<!DOCTYPE html class="lazy-loaded" data-lazy-loaded="true">
+﻿<!DOCTYPE html class="lazy-loaded" data-lazy-loaded="true">
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#0d1117">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Drama Team">
+    <link rel="apple-touch-icon" href="/photos/apple-touch-icon.png">
+    <script src="/pwa.js" defer></script>
     <title>Drama Team family Gallery images</title>
     <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-M7B25JY4QZ"></script>
@@ -17,15 +23,15 @@
 
     <style>
         :root {
-            --bg: #111;
-            --surface: #1a1a1a;
-            --surface-2: #242424;
-            --text: bisque;
-            --muted: #bdbdbd;
-            --border: #333;
-            --accent: #d3d3d3;
-            --danger: #8b0000;
-            --success: #216e39;
+            --bg: #0d1117;
+            --surface: #161b22;
+            --surface-2: #202a34;
+            --text: #f3efe7;
+            --muted: #b9c2ca;
+            --border: #303943;
+            --accent: #e6c989;
+            --danger: #8f3030;
+            --success: #246b58;
             --radius: 12px;
         }
 
@@ -43,6 +49,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
             gap: 12px;
             padding: 12px 20px;
         }
@@ -70,14 +77,14 @@
         }
 
         #logout-button {
-            background: brown;
+            background: var(--danger);
             color: white;
         }
 
         #meeting-button,
         #start-meeting-button {
-            background: #d3d3d3;
-            color: #111;
+            background: var(--accent);
+            color: #17130d;
         }
 
         header { padding: 10px 20px 20px; }
@@ -142,8 +149,8 @@
 
         .input-button {
             display: inline-block;
-            background: #d3d3d3;
-            color: #111;
+            background: var(--accent);
+            color: #17130d;
             border-radius: 8px;
             padding: 6px 12px;
             cursor: pointer;
@@ -161,9 +168,9 @@
         }
 
         select {
-            background: #cfcfcf;
-            color: #111;
-            border: 0;
+            background: #0d1117;
+            color: var(--text);
+            border: 1px solid #46515d;
             border-radius: 8px;
             padding: 5px 8px;
             cursor: pointer;
@@ -307,7 +314,7 @@
             width: auto;
             height: auto;
             object-fit: contain;
-            border: 1px solid indianred;
+            border: 1px solid var(--accent);
             border-radius: 20px;
         }
 
@@ -349,17 +356,18 @@
             #logo { width: 70px; height: 70px; }
             #container { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 12px 8px; }
             #container.large-view { grid-template-columns: 1fr; }
+            nav { justify-content: center; }
             .modal { padding: 15px; }
             #close { top: 10px; right: 15px; font-size: 38px; }
             #downloadImage { top: 14px; right: 62px; padding: 8px 10px; }
-            .file-info { font-size: 0px; }
+            .file-info { font-size: 10px; }
         }
     </style>
 </head>
 
 <body>
     <nav>
-        <a href="login.html">
+        <a href="login.html?role=umukomite">
             <button type="button" class="nav-button" id="umukomite-button">Umukomitte</button>
         </a>
         <a href="index.html">
@@ -483,6 +491,14 @@
             });
         }
 
+        if (logoutButton) {
+            logoutButton.addEventListener("click", () => {
+                localStorage.removeItem("active");
+                localStorage.removeItem("status");
+                sessionStorage.removeItem("dtm_manager_session");
+            });
+        }
+
         function loadUserStatus() {
             try {
                 const savedStatus = localStorage.getItem("status");
@@ -495,7 +511,7 @@
                     const savedName = status[2] ?? status[1] ?? "";
                     title.textContent = savedName;
                     if (status[0] === "new") {
-                        great.textContent = "Hey ☺️";
+                        great.textContent = "Hey â˜ºï¸";
                         title.classList.add("new");
                     }
                 }
@@ -868,10 +884,10 @@
 
             if (failed.length) {
                 parts.push(`${failed.length} failed`);
-                showMessage(`${parts.join(" • ")}: ${failed.join(" | ")}`, "error");
+                showMessage(`${parts.join(" â€¢ ")}: ${failed.join(" | ")}`, "error");
             } else {
                 showMessage(
-                    parts.length ? parts.join(" • ") : "Nothing uploaded.",
+                    parts.length ? parts.join(" â€¢ ") : "Nothing uploaded.",
                     duplicates && !uploaded ? "success" : "success"
                 );
             }
@@ -945,7 +961,10 @@
             }
         });
 
-        logoutButton.addEventListener("click", () => localStorage.clear());
+        logoutButton.addEventListener("click", () => {
+            localStorage.removeItem("active");
+            localStorage.removeItem("status");
+        });
 
         loadUserStatus();
         loadPhotos();

@@ -1,5 +1,6 @@
 import { AccessToken } from 'livekit-server-sdk';
 import { randomUUID } from 'node:crypto';
+import { verifyManagerSession } from '../manager-session.mjs';
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -51,14 +52,29 @@ export default async function handler(request) {
     return json({ error: 'Request body must be valid JSON.' }, 400);
   }
 
-  const name = typeof body?.name === 'string' ? body.name.trim().replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 80) : '';
+  const requestedRole = body?.role === 'umukomite' ? 'umukomite' : 'umufamiliye';
+  let managerSession = null;
+  if (requestedRole === 'umukomite') {
+    try { managerSession = verifyManagerSession(body?.managerSessionToken); }
+    catch { return json({ error: 'Manager sign-in is not configured on the server.' }, 503); }
+  }
+  if (requestedRole === 'umukomite' && !managerSession) {
+    return json({ error: 'Manager sign-in has expired. Sign in again to join as Umukomite.' }, 401);
+  }
+
+  const name = requestedRole === 'umukomite'
+    ? String(managerSession.name || '').trim().slice(0, 80)
+    : typeof body?.name === 'string' ? body.name.trim().replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 80) : '';
   if (!name) return json({ error: 'Enter your name before joining.' }, 400);
 
   try {
-    const identity = `${name.replace(/[^\p{L}\p{N}_-]/gu, '_').slice(0, 60) || 'guest'}-${randomUUID().slice(0, 8)}`;
+    const role = requestedRole;
+    const prefix = role === 'umukomite' ? 'manager' : 'member';
+    const identity = `${prefix}-${name.replace(/[^\p{L}\p{N}_-]/gu, '_').slice(0, 50) || 'guest'}-${randomUUID().slice(0, 8)}`;
     const accessToken = new AccessToken(config.apiKey, config.apiSecret, {
       identity,
       name,
+      metadata: JSON.stringify({ role }),
       ttl: '10m'
     });
     accessToken.addGrant({

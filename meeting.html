@@ -1,8 +1,14 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Drama Team">
+  <link rel="apple-touch-icon" href="/photos/apple-touch-icon.png">
+  <script src="/pwa.js" defer></script>
   <meta name="description" content="Join the Drama Team Family LiveKit video room.">
   <title>Live Meeting | Drama Team Family</title>
   <style>
@@ -41,7 +47,7 @@
 </head>
 <body>
   <main class="shell">
-    <header><strong>Drama Team Family</strong><a href="index.html">← Back home</a></header>
+    <header><strong>Drama Team Family</strong><a href="index.html">â† Back home</a></header>
     <section class="panel" aria-labelledby="title">
       <div class="eyebrow">LiveKit room</div>
       <h1 id="title">Join the live meeting</h1>
@@ -51,7 +57,7 @@
         <input id="participantName" name="name" maxlength="80" autocomplete="name" placeholder="Your name" required>
         <button id="joinButton" type="submit">Join room</button>
       </form>
-      <p id="status" role="status" aria-live="polite">Checking LiveKit settings…</p>
+      <p id="status" role="status" aria-live="polite">Checking LiveKit settingsâ€¦</p>
       <div id="roomControls" class="controls" hidden>
         <button id="micButton" type="button" class="secondary">Mute microphone</button>
         <button id="cameraButton" type="button" class="secondary">Turn camera off</button>
@@ -62,7 +68,7 @@
     </section>
   </main>
   <script type="module">
-    import { Room, RoomEvent, Track } from 'https://esm.sh/livekit-client@2.23.0';
+    import { Room, RoomEvent, Track, VideoPresets } from 'https://esm.sh/livekit-client@2.23.0';
 
     const form = document.getElementById('joinForm');
     const nameInput = document.getElementById('participantName');
@@ -92,9 +98,9 @@
         const response = await fetch('/.netlify/functions/livekit-token');
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || 'LiveKit environment variables are missing.');
-        setStatus(`Ready to connect to room “${result.roomName}”.`, 'success');
+        setStatus(`Ready to connect to room â€œ${result.roomName}â€.`, 'success');
       } catch (error) {
-        setStatus(`${error.message} Start the local site with “npm run dev” and set the server environment first.`, 'error');
+        setStatus(`${error.message} Start the local site with â€œnpm run devâ€ and set the server environment first.`, 'error');
       }
     }
 
@@ -135,7 +141,7 @@
       const tile = tiles.get(participant.identity);
       if (tile) tile.remove();
       tiles.delete(participant.identity);
-      if (!tiles.size) participantsEl.innerHTML = '<div class="empty">Waiting for participants…</div>';
+      if (!tiles.size) participantsEl.innerHTML = '<div class="empty">Waiting for participantsâ€¦</div>';
     }
 
     async function leaveRoom() {
@@ -156,16 +162,30 @@
       event.preventDefault();
       if (room) return;
       joinButton.disabled = true;
-      setStatus('Getting a secure room token…');
+      setStatus('Getting a secure room tokenâ€¦');
       try {
         const response = await fetch('/.netlify/functions/livekit-token', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: nameInput.value.trim() })
+          body: JSON.stringify({
+            name: nameInput.value.trim(),
+            role: sessionStorage.getItem('dtm_manager_session') ? 'umukomite' : 'umufamiliye',
+            managerSessionToken: sessionStorage.getItem('dtm_manager_session')
+          })
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Could not create a room token.');
 
-        room = new Room({ adaptiveStream: true, dynacast: true });
+        room = new Room({
+          adaptiveStream: true,
+          dynacast: true,
+          videoCaptureDefaults: {
+            resolution: VideoPresets.h720.resolution,
+            frameRate: 30,
+          },
+          publishDefaults: {
+            videoEncoding: VideoPresets.h720.encoding,
+          },
+        });
         room.on(RoomEvent.TrackSubscribed, (track, _publication, participant) => attachTrack(track, participant));
         room.on(RoomEvent.TrackUnsubscribed, track => {
           track.detach().forEach(el => el.remove());
@@ -178,7 +198,7 @@
           form.hidden = false;
           joinButton.disabled = false;
         });
-        setStatus('Connecting to LiveKit…');
+        setStatus('Connecting to LiveKitâ€¦');
         await room.connect(data.serverUrl, data.token);
         for (const participant of room.remoteParticipants.values()) {
           participantTile(participant);

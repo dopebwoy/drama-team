@@ -8,9 +8,12 @@
   "scripts": {
     "dev": "node scripts/dev-server.mjs",
     "test": "node --test",
-    "test:livekit": "node scripts/check-livekit.mjs"
+    "test:livekit": "node scripts/check-livekit.mjs",
+    "vapid:generate": "node scripts/generate-vapid-keys.mjs",
+    "push:check": "node scripts/check-push-setup.mjs"
   },
   "dependencies": {
-    "livekit-server-sdk": "^2.19.2"
+    "livekit-server-sdk": "^2.19.2",
+    "web-push": "^4.0.0"
   }
 }

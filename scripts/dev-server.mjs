@@ -17,6 +17,7 @@ const contentTypes = {
   '.js': 'text/javascript; charset=utf-8',
   '.mjs': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
@@ -27,9 +28,10 @@ const contentTypes = {
   '.xml': 'application/xml; charset=utf-8',
   '.txt': 'text/plain; charset=utf-8'
 };
-const blockedRoots = new Set(['.git', '.netlify', '.vscode', 'node_modules', 'netlify', 'scripts', 'test']);
+const blockedRoots = new Set(['.git', '.netlify', '.vscode', 'node_modules', 'netlify', 'scripts', 'supabase', 'test']);
+const blockedFiles = new Set(['package.json', 'package-lock.json', '.gitignore', 'netlify.toml']);
 
-async function serveFunction(request, response) {
+async function serveFunction(request, response, handler) {
   const chunks = [];
   for await (const chunk of request) chunks.push(chunk);
   const body = chunks.length ? Buffer.concat(chunks) : undefined;
@@ -38,7 +40,7 @@ async function serveFunction(request, response) {
     headers: request.headers,
     ...(body ? { body } : {})
   });
-  const webResponse = await tokenHandler(webRequest);
+  const webResponse = await handler(webRequest);
   response.writeHead(webResponse.status, Object.fromEntries(webResponse.headers.entries()));
   response.end(Buffer.from(await webResponse.arrayBuffer()));
 }
@@ -46,8 +48,16 @@ async function serveFunction(request, response) {
 const server = createServer(async (request, response) => {
   try {
     const pathname = new URL(request.url, 'http://localhost').pathname;
-    if (pathname === '/.netlify/functions/livekit-token' || pathname === '/api/livekit-token') {
-      await serveFunction(request, response);
+    const functionMatch = pathname.match(/^\/.netlify\/functions\/(livekit-token|livekit-moderate|manager-login|push-config|push-subscribe|push-unsubscribe)$/);
+    if (functionMatch) {
+      const functionModule = functionMatch[1] === 'livekit-token'
+        ? { default: tokenHandler }
+        : await import(`../netlify/functions/${functionMatch[1]}.mjs`);
+      await serveFunction(request, response, functionModule.default);
+      return;
+    }
+    if (pathname === '/api/livekit-token') {
+      await serveFunction(request, response, tokenHandler);
       return;
     }
     if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -61,7 +71,9 @@ const server = createServer(async (request, response) => {
     const segments = publicPath.split(/[\\/]+/).filter(Boolean);
     const resolvedPath = path.resolve(projectRoot, `.${publicPath}`);
     const relativePath = path.relative(projectRoot, resolvedPath);
-    if (segments.some(segment => blockedRoots.has(segment)) || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+    if (segments.some(segment => blockedRoots.has(segment) || segment.startsWith('.')) ||
+        blockedFiles.has(path.basename(resolvedPath).toLowerCase()) ||
+        relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
       response.writeHead(404);
       response.end('Not found');
       return;

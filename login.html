@@ -1,9 +1,15 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#0d1117">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Drama Team">
+    <link rel="apple-touch-icon" href="/photos/apple-touch-icon.png">
+    <script src="/pwa.js" defer></script>
     <title>Login | Dama Team family Es rugabano</title>
     <link rel="icon" type="image/icon" href="./photos/logo.png">
     <!-- Google tag (gtag.js) -->
@@ -17,17 +23,17 @@
 </script>
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --bg-soft: #1e293b;
-            --card-bg: rgba(15, 23, 42, 0.8);
-            --gold: #f7dfb6;
-            --gold-strong: #ecd9b1;
-            --white: #f8fafc;
-            --muted: #cbd5e1;
-            --border: rgba(255, 255, 255, 0.12);
-            --shadow: rgba(15, 23, 42, 0.35);
-            --success: #34d399;
-            --danger: #f87171;
+            --bg-dark: #0d1117;
+            --bg-soft: #161b22;
+            --card-bg: rgba(22, 27, 34, 0.9);
+            --gold: #e6c989;
+            --gold-strong: #f4ddb0;
+            --white: #f3efe7;
+            --muted: #b9c2ca;
+            --border: rgba(255, 255, 255, 0.14);
+            --shadow: rgba(0, 0, 0, 0.4);
+            --success: #83e3c2;
+            --danger: #ff9e9e;
         }
 
         * {
@@ -41,8 +47,8 @@
             place-items: center;
             font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
             background:
-                linear-gradient(rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.85)),
-                url('./photos/backonlogin.jpg') center/cover no-repeat fixed;
+                linear-gradient(rgba(13, 17, 23, 0.78), rgba(13, 17, 23, 0.86)),
+                url('./photos/backonlogin.jpg') center/cover no-repeat;
             color: var(--white);
         }
 
@@ -163,8 +169,8 @@
             margin-top: 8px;
             border: none;
             border-radius: 12px;
-            background: linear-gradient(135deg, #f3bf65, #eea672);
-            color: #fff;
+            background: linear-gradient(135deg, var(--gold), var(--gold-strong));
+            color: #17130d;
             padding: 14px 18px;
             font-size: 1rem;
             font-weight: 700;
@@ -184,6 +190,26 @@
             color: var(--muted);
         }
 
+        .reminder-choice {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin: 14px 0;
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+
+        .reminder-choice input {
+            width: auto;
+            min-width: 0;
+            margin: 3px 0 0;
+            accent-color: var(--gold);
+        }
+
+        .status-text[data-kind="error"] { color: var(--danger); }
+        .status-text[data-kind="success"] { color: var(--success); }
+
         @media (max-width: 480px) {
             .login-card {
                 padding: 24px 18px 20px;
@@ -197,7 +223,7 @@
         <div class="login-card">
             <div class="top-bar">
                 <div class="brand">DTm</div>
-                <a href="index.html" class="home-link">← Home</a>
+                <a href="index.html" class="home-link">â† Home</a>
             </div>
 
             <h1>Welcome back</h1>
@@ -219,10 +245,15 @@
                     <input type="password" id="pass" placeholder="Enter password" required>
                 </div>
 
+                <label class="reminder-choice" for="enableReminders">
+                    <input type="checkbox" id="enableReminders">
+                    <span>Send this device a reminder every 3 months to check for something new. On iPhone or iPad, add the website to your Home Screen first.</span>
+                </label>
+
                 <button type="submit" class="submit-btn">Continue</button>
             </form>
 
-            <p class="status-text"> hitamo aho kwinjira neza</p>
+            <p class="status-text" id="loginStatus" role="status" aria-live="polite"> hitamo aho kwinjira neza</p>
         </div>
     </div>
 
@@ -236,10 +267,16 @@
         const loginForm = document.getElementById('loginForm');
         const nameInput = document.getElementById('name');
         const passInput = document.getElementById('pass');
-        const public_passkey = localStorage.getItem('password');
-        const manager_password = 'umu7.2026';
+        const enableRemindersInput = document.getElementById('enableReminders');
+        const loginStatus = document.getElementById('loginStatus');
+        const public_passkey = localStorage.getItem('password') || 'drama';
+        const pushConfigPromise = fetch('/.netlify/functions/push-config')
+            .then(async response => ({ ...await response.json(), ok: response.ok }))
+            .catch(() => ({ ok: false, error: 'Push notifications are not configured on the website yet.' }));
 
-        let selectedRole = 'member';
+        const requestedRole = new URLSearchParams(window.location.search).get('role');
+        let selectedRole = requestedRole === 'umukomite' ? 'umukomite' : 'member';
+        roleButtons.forEach(button => button.classList.toggle('active', button.dataset.role === selectedRole));
 
         function getStoredName() {
             try {
@@ -251,6 +288,127 @@
                 console.warn('Could not read saved name:', error);
             }
             return '';
+        }
+
+        nameInput.value = localStorage.getItem('dtm_saved_name') || getStoredName();
+        enableRemindersInput.checked = localStorage.getItem('dtm_push_reminders_enabled') === 'true';
+
+        async function prepareDevicePushSubscription() {
+            if (!('Notification' in window)) {
+                throw new Error('This browser cannot receive web push notifications.');
+            }
+            if (!window.isSecureContext || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+                throw new Error('This browser cannot receive web push notifications.');
+            }
+
+            const permissionRequest = Notification.requestPermission();
+            const [permission, registration, config] = await Promise.all([
+                permissionRequest,
+                navigator.serviceWorker.register('/sw.js').then(() => navigator.serviceWorker.ready),
+                pushConfigPromise
+            ]);
+            if (permission !== 'granted') throw new Error('Allow notifications in your browser settings to enable reminders.');
+            if (!config.ok || !config.publicKey) throw new Error(config.error || 'Push notifications are not configured on the website yet.');
+
+            let subscription = await registration.pushManager.getSubscription();
+            if (!subscription) {
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: applicationServerKeyBytes(config.publicKey)
+                });
+            }
+            return subscription;
+        }
+
+        enableRemindersInput.addEventListener('change', async () => {
+            if (!enableRemindersInput.checked) return;
+            try {
+                await prepareDevicePushSubscription();
+                loginStatus.textContent = 'Notifications allowed. Continue to save this device for reminders.';
+                loginStatus.dataset.kind = 'success';
+            } catch (error) {
+                enableRemindersInput.checked = false;
+                loginStatus.textContent = error.message;
+                loginStatus.dataset.kind = 'error';
+            }
+        });
+
+        function applicationServerKeyBytes(value) {
+            const padding = '='.repeat((4 - value.length % 4) % 4);
+            const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const raw = atob(base64);
+            return Uint8Array.from(raw, character => character.charCodeAt(0));
+        }
+
+        async function enableQuarterlyReminders() {
+            if (!window.isSecureContext || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+                throw new Error('This browser cannot receive web push notifications.');
+            }
+
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            if (Notification.permission !== 'granted') throw new Error('Notification permission was not granted. Turn on the reminder option and allow notifications first.');
+            const subscription = await registration.pushManager.getSubscription();
+            if (!subscription) throw new Error('The device is not subscribed for reminders. Turn the reminder option on again.');
+
+            const saveResponse = await fetch('/.netlify/functions/push-subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subscription: subscription.toJSON() })
+            });
+            const result = await saveResponse.json();
+            if (!saveResponse.ok) throw new Error(result.error || 'Could not save this device for reminders.');
+            localStorage.setItem('dtm_push_reminders_enabled', 'true');
+        }
+
+        async function disableQuarterlyReminders() {
+            const registration = await navigator.serviceWorker.getRegistration('/');
+            const subscription = await registration?.pushManager.getSubscription();
+            if (subscription) {
+                const response = await fetch('/.netlify/functions/push-unsubscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ endpoint: subscription.endpoint })
+                });
+                if (!response.ok) throw new Error('Could not remove this device from the reminder list.');
+                await subscription.unsubscribe();
+            }
+            localStorage.removeItem('dtm_push_reminders_enabled');
+        }
+
+        async function finishLogin(name, role, destination) {
+            const savedStatus = JSON.parse(localStorage.getItem('status') || '[]');
+            const status = Array.isArray(savedStatus) ? savedStatus : [];
+            status[0] = 'old';
+            status[1] = 'active';
+            status[2] = name;
+            localStorage.setItem('status', JSON.stringify(status));
+            localStorage.setItem('dtm_saved_name', name);
+            localStorage.setItem('dtm_profile', JSON.stringify({ name, role, savedAt: new Date().toISOString() }));
+            if (role !== 'umukomite') sessionStorage.removeItem('dtm_manager_session');
+            recordLogin(name, role);
+            passInput.value = '';
+
+            if (enableRemindersInput.checked) {
+                loginStatus.textContent = 'Saving your login and enabling remindersâ€¦';
+                loginStatus.dataset.kind = 'success';
+                try {
+                    await enableQuarterlyReminders();
+                } catch (error) {
+                    console.warn('Could not enable quarterly reminders:', error.message);
+                    loginStatus.textContent = `Login saved. Reminders were not enabled: ${error.message}`;
+                    loginStatus.dataset.kind = 'error';
+                    await new Promise(resolve => setTimeout(resolve, 1800));
+                }
+            } else if (localStorage.getItem('dtm_push_reminders_enabled') === 'true') {
+                try {
+                    await disableQuarterlyReminders();
+                    loginStatus.textContent = 'Three-month reminders turned off for this device.';
+                    loginStatus.dataset.kind = 'success';
+                } catch (error) {
+                    console.warn('Could not disable quarterly reminders:', error.message);
+                }
+            }
+            window.location.href = destination;
         }
 
         async function recordLogin(name, role) {
@@ -289,7 +447,7 @@
             });
         });
 
-        loginForm.addEventListener('submit', (e) => {
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const name = nameInput.value.trim();
@@ -302,15 +460,7 @@
 
             if (selectedRole === 'member') {
                 if (public_passkey && public_passkey === password) {
-                    const savedStatus = JSON.parse(localStorage.getItem('status') || '[]');
-                    const status = Array.isArray(savedStatus) ? savedStatus : [];
-                    status[0] = 'old';
-                    status[1] = 'active';
-                    status[2] = name;
-                    localStorage.setItem('status', JSON.stringify(status));
-                    recordLogin(name, 'member');
-                    passInput.value = '';
-                    window.location.href = 'store.html';
+                    await finishLogin(name, 'member', 'store.html');
                     return;
                 }
 
@@ -318,21 +468,20 @@
                 return;
             }
 
-            if (password === manager_password) {
-                alert('Welcome, Umukomite dashboard is loading...');
-                const savedStatus = JSON.parse(localStorage.getItem('status') || '[]');
-                const status = Array.isArray(savedStatus) ? savedStatus : [];
-                status[0] = 'old';
-                status[1] = 'active';
-                status[2] = name;
-                localStorage.setItem('status', JSON.stringify(status));
-                recordLogin(name, 'umukomite');
-                passInput.value = '';
-                window.location.href = 'umukomite.html';
-                return;
+            try {
+                const response = await fetch('/.netlify/functions/manager-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, password })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Could not sign in as Umukomite.');
+                sessionStorage.setItem('dtm_manager_session', result.sessionToken);
+                await finishLogin(name, 'umukomite', 'umukomite.html');
+            } catch (error) {
+                loginStatus.textContent = error.message;
+                loginStatus.dataset.kind = 'error';
             }
-
-            alert('Incorrect Umukomite password.');
         });
     </script>
 </body>

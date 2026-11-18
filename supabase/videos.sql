@@ -1,16 +1,17 @@
--- Video bytes stay in a private Backblaze B2 bucket. This table stores only
--- the title and key needed to create a temporary playback link.
+-- Video bytes stay in a private Backblaze B2 bucket. This table stores the
+-- title, B2 key, and optional public preview image path.
 create table if not exists public.videos (
   id uuid primary key default gen_random_uuid(),
   title text,
   file_key text,
+  thumbnail_path text,
   created_at timestamptz not null default now()
 );
 
 alter table public.videos add column if not exists title text;
 alter table public.videos add column if not exists file_key text;
+alter table public.videos add column if not exists thumbnail_path text;
 
--- Migrate rows from the earlier public-URL gallery schema, if it was applied.
 drop policy if exists "Public can view videos" on public.videos;
 drop policy if exists "Public can add videos" on public.videos;
 
@@ -63,4 +64,5 @@ create policy "Public can add videos"
   with check (
     length(title) between 1 and 255
     and file_key like 'videos/%'
+    and (thumbnail_path is null or thumbnail_path like 'video-thumbnails/%')
   );

@@ -175,7 +175,7 @@
 
         .stats {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 12px;
             margin-bottom: 24px;
         }
@@ -200,13 +200,27 @@
 
         .toolbar {
             display: grid;
-            grid-template-columns: 1fr auto auto auto;
+            grid-template-columns: minmax(0, 1fr) auto repeat(3, auto);
             gap: 10px;
             padding: 13px;
             margin-bottom: 15px;
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius);
+        }
+
+        .media-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .media-tab[aria-selected="true"] {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #17130d;
+            font-weight: 700;
         }
 
         .search {
@@ -247,6 +261,7 @@
 
         .selection-actions {
             display: flex;
+            flex-wrap: wrap;
             gap: 8px;
         }
 
@@ -303,6 +318,42 @@
 
         .photo-frame img:hover { opacity: .9; }
 
+        .video-placeholder {
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            place-items: center;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: radial-gradient(circle at center, #263442, #0a0d11 72%);
+            color: var(--accent);
+            font: 700 13px system-ui, sans-serif;
+            letter-spacing: .08em;
+        }
+
+        .video-preview-image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-preview-play {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            width: 48px;
+            height: 48px;
+            place-items: center;
+            padding-left: 3px;
+            border: 1px solid rgba(255, 255, 255, .65);
+            border-radius: 50%;
+            background: rgba(8, 12, 16, .68);
+            color: var(--accent);
+            font-size: 18px;
+        }
+
         .photo-body { padding: 11px; }
 
         .photo-name {
@@ -326,6 +377,7 @@
 
         .photo-actions button {
             flex: 1;
+            min-height: 40px;
             padding: 7px 8px;
             border-radius: 7px;
             border: 1px solid #3c3c3c;
@@ -531,29 +583,43 @@
         .moderation-empty { grid-column: 1 / -1; margin: 0; padding: 16px; border: 1px dashed var(--border); border-radius: 10px; color: var(--muted); text-align: center; font: 13px/1.5 system-ui, sans-serif; }
         .meeting-remove { flex: 0 0 auto; }
 
+        button:disabled {
+            cursor: wait;
+            opacity: .65;
+            transform: none;
+        }
+
         @media (max-width: 850px) {
-            .stats { grid-template-columns: repeat(2, 1fr); }
-            .toolbar { grid-template-columns: 1fr 1fr; }
+            .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .search { grid-column: 1 / -1; }
         }
 
         @media (max-width: 560px) {
             nav { align-items: flex-start; flex-direction: column; padding: 10px 12px; }
             .nav-actions { width: 100%; flex-wrap: wrap; }
-            .nav-actions > * { flex: 1 1 auto; }
+            .nav-actions > * { flex: 1 1 30%; min-width: 0; }
             .nav-actions button { width: 100%; }
             .page { width: min(100% - 20px, 1400px); padding-top: 20px; }
             .hero { align-items: flex-start; flex-direction: column; }
             .stats { grid-template-columns: 1fr 1fr; }
             .toolbar { grid-template-columns: 1fr; }
-            .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+            .gallery { grid-template-columns: repeat(auto-fit, minmax(min(100%, 155px), 1fr)); gap: 10px; }
             .photo-body { padding: 8px; }
-            .photo-actions { flex-direction: column; }
-            .selection-bar { align-items: flex-start; flex-direction: column; }
+            .photo-actions { flex-wrap: wrap; }
+            .photo-actions button { min-width: 90px; }
+            .selection-bar { align-items: flex-start; flex-wrap: wrap; }
             .activity-header { flex-direction: column; align-items: flex-start; }
             .meeting-header { flex-direction: column; }
             .meeting-summary { width: 100%; justify-content: space-between; }
             .meeting-participants { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 360px) {
+            .gallery { grid-template-columns: 1fr; }
+            .stats { grid-template-columns: 1fr; }
+            .selection-actions { width: 100%; }
+            .selection-actions button { flex: 1; }
         }
     </style>
 </head>
@@ -583,9 +649,7 @@
         <section class="hero">
             <div>
                 <h1>Gallery Manager</h1>
-                <p>Manage Drama Team Family photos, remove unwanted images, and keep storage clean.
-                    remember that , we have only 1 GB of storage 
-                </p>
+                <p>Manage Drama Team Family photos and videos, remove unwanted media, and keep storage clean.</p>
             </div>
             <div class="hero-badge">UMUKOMITE CONTROL CENTER</div>
         </section>
@@ -611,6 +675,10 @@
             <div class="stat">
                 <div class="stat-label">TOTAL PHOTOS</div>
                 <div class="stat-value" id="totalPhotos">â€”</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">TOTAL VIDEOS</div>
+                <div class="stat-value" id="totalVideos">â€”</div>
             </div>
             <div class="stat">
                 <div class="stat-label">STORAGE USED</div>
@@ -646,12 +714,17 @@
             </div>
         </section>
 
+        <section class="media-tabs" role="tablist" aria-label="Manage gallery media">
+            <button id="photosTab" class="secondary-button media-tab" type="button" role="tab" aria-selected="true" aria-controls="gallery">Photos</button>
+            <button id="videosTab" class="secondary-button media-tab" type="button" role="tab" aria-selected="false" aria-controls="gallery">Videos</button>
+        </section>
+
         <section class="toolbar">
             <input
                 id="search"
                 class="search"
                 type="search"
-                placeholder="Search filename or uploader..."
+                placeholder="Search photo name or uploader..."
                 autocomplete="off"
             >
 
@@ -670,7 +743,7 @@
         </section>
 
         <section id="selectionBar" class="selection-bar">
-            <span><strong id="selectedCount">0</strong> photos selected</span>
+            <span><strong id="selectedCount">0</strong> <span id="selectedTypeLabel">photos</span> selected</span>
             <div class="selection-actions">
                 <button id="clearSelection" class="secondary-button" type="button">Clear</button>
                 <button id="deleteSelected" class="danger-button" type="button">Delete selected</button>
@@ -722,6 +795,7 @@
         const logoutButton = document.getElementById("logoutButton");
 
         const totalPhotos = document.getElementById("totalPhotos");
+        const totalVideos = document.getElementById("totalVideos");
         const storageUsed = document.getElementById("storageUsed");
         const duplicateCount = document.getElementById("duplicateCount");
         const missingCount = document.getElementById("missingCount");
@@ -729,10 +803,12 @@
 
         const selectionBar = document.getElementById("selectionBar");
         const selectedCount = document.getElementById("selectedCount");
+        const selectedTypeLabel = document.getElementById("selectedTypeLabel");
         const clearSelection = document.getElementById("clearSelection");
         const deleteSelected = document.getElementById("deleteSelected");
 
         const confirmModal = document.getElementById("confirmModal");
+        const confirmTitle = document.getElementById("confirmTitle");
         const confirmText = document.getElementById("confirmText");
         const cancelDelete = document.getElementById("cancelDelete");
         const confirmDelete = document.getElementById("confirmDelete");
@@ -741,11 +817,16 @@
         const meetingCount = document.getElementById("meetingCount");
         const meetingModerationStatus = document.getElementById("meetingModerationStatus");
         const refreshMeetingButton = document.getElementById("refreshMeetingButton");
+        const photosTab = document.getElementById("photosTab");
+        const videosTab = document.getElementById("videosTab");
         const managerSessionToken = sessionStorage.getItem("dtm_manager_session");
 
         let photos = [];
+        let videos = [];
+        let activeMediaType = "photo";
         let selectedIds = new Set();
         let pendingDeleteIds = [];
+        let pendingDeleteType = "photo";
         let toastTimer;
         let meetingRefreshInProgress = false;
 
@@ -997,6 +1078,24 @@
             return result;
         }
 
+        function getFilteredVideos() {
+            const query = searchInput.value.trim().toLowerCase();
+            const result = videos.filter(video => {
+                if (!query) return true;
+                return (video.title || "").toLowerCase().includes(query) ||
+                    (video.file_key || "").toLowerCase().includes(query);
+            });
+
+            result.sort((a, b) => {
+                switch (sortSelect.value) {
+                    case "old": return new Date(a.created_at) - new Date(b.created_at);
+                    case "name": return (a.title || "").localeCompare(b.title || "");
+                    default: return new Date(b.created_at) - new Date(a.created_at);
+                }
+            });
+            return result;
+        }
+
         function calculateDuplicateCount(items) {
             const hashes = new Map();
 
@@ -1015,6 +1114,7 @@
 
         function updateStats() {
             totalPhotos.textContent = photos.length;
+            totalVideos.textContent = videos.length;
 
             const totalBytes = photos.reduce(
                 (sum, photo) => sum + Number(photo.file_size || 0),
@@ -1029,6 +1129,9 @@
         function updateSelectionUI() {
             const count = selectedIds.size;
             selectedCount.textContent = count;
+            selectedTypeLabel.textContent = activeMediaType === "photo"
+                ? `photo${count === 1 ? "" : "s"}`
+                : `video${count === 1 ? "" : "s"}`;
             selectionBar.classList.toggle("visible", count > 0);
 
             document.querySelectorAll(".photo-card").forEach(card => {
@@ -1107,7 +1210,7 @@
             deleteButton.type = "button";
             deleteButton.className = "delete-one";
             deleteButton.textContent = "Delete";
-            deleteButton.addEventListener("click", () => askDelete([photo.id]));
+            deleteButton.addEventListener("click", () => askDelete([photo.id], "photo"));
 
             actions.append(viewButton, deleteButton);
             body.append(name, meta, actions);
@@ -1116,16 +1219,80 @@
             return card;
         }
 
+        function createVideoCard(video) {
+            const card = document.createElement("article");
+            card.className = "photo-card video-card";
+            card.dataset.id = video.id;
+
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.className = "photo-check";
+            checkbox.checked = selectedIds.has(video.id);
+            checkbox.setAttribute("aria-label", `Select ${video.title || "video"}`);
+            checkbox.addEventListener("change", () => {
+                if (checkbox.checked) selectedIds.add(video.id);
+                else selectedIds.delete(video.id);
+                updateSelectionUI();
+            });
+
+            const frame = document.createElement("div");
+            frame.className = "video-placeholder";
+            frame.setAttribute("role", "img");
+            frame.setAttribute("aria-label", `Preview for ${video.title || "video"}`);
+            if (video.thumbnail_path) {
+                const preview = document.createElement("img");
+                preview.className = "video-preview-image";
+                preview.src = getPublicUrl(video.thumbnail_path);
+                preview.alt = "";
+                preview.loading = "lazy";
+                preview.decoding = "async";
+                preview.addEventListener("error", () => preview.remove(), { once: true });
+                frame.appendChild(preview);
+            } else {
+                frame.appendChild(document.createTextNode("VIDEO"));
+            }
+            const playIcon = document.createElement("span");
+            playIcon.className = "video-preview-play";
+            playIcon.setAttribute("aria-hidden", "true");
+            playIcon.textContent = "▶";
+            frame.appendChild(playIcon);
+
+            const body = document.createElement("div");
+            body.className = "photo-body";
+            const name = document.createElement("div");
+            name.className = "photo-name";
+            name.textContent = video.title || "Untitled video";
+
+            const meta = document.createElement("div");
+            meta.className = "photo-meta";
+            meta.textContent = formatDate(video.created_at);
+
+            const actions = document.createElement("div");
+            actions.className = "photo-actions";
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.className = "delete-one";
+            deleteButton.textContent = "Delete video";
+            deleteButton.addEventListener("click", () => askDelete([video.id], "video"));
+
+            actions.append(deleteButton);
+            body.append(name, meta, actions);
+            card.append(checkbox, frame, body);
+            return card;
+        }
+
         function render() {
-            const visible = getFilteredPhotos();
+            const visible = activeMediaType === "photo" ? getFilteredPhotos() : getFilteredVideos();
             gallery.replaceChildren();
 
             if (!visible.length) {
                 const empty = document.createElement("div");
                 empty.className = "empty";
-                empty.textContent = photos.length
-                    ? "No photos match your search."
-                    : "No photos have been uploaded yet.";
+                const total = activeMediaType === "photo" ? photos.length : videos.length;
+                const label = activeMediaType === "photo" ? "photos" : "videos";
+                empty.textContent = total
+                    ? `No ${label} match your search.`
+                    : `No ${label} have been uploaded yet.`;
                 gallery.appendChild(empty);
                 updateSelectionUI();
                 updateStats();
@@ -1133,7 +1300,9 @@
                 return;
             }
 
-            visible.forEach(photo => gallery.appendChild(createCard(photo)));
+            visible.forEach(item => gallery.appendChild(
+                activeMediaType === "photo" ? createCard(item) : createVideoCard(item)
+            ));
             updateSelectionUI();
             updateStats();
             renderActivityTable();
@@ -1154,7 +1323,7 @@
                 console.error(error);
                 gallery.innerHTML = '<div class="empty">Could not load photos.</div>';
                 showToast(`Could not load photos: ${error.message}`, "error");
-                return;
+                return false;
             }
 
             photos = data || [];
@@ -1166,17 +1335,50 @@
 
             render();
             renderActivityTable();
+            return true;
         }
 
-        function askDelete(ids) {
+        async function loadVideos() {
+            gallery.innerHTML = '<div class="empty">Loading videos...</div>';
+            const { data, error } = await supabaseClient
+                .from("videos")
+                .select("id, title, file_key, thumbnail_path, created_at")
+                .order("created_at", { ascending: false });
+
+            if (error) {
+                console.error("Could not load videos:", error);
+                gallery.innerHTML = '<div class="empty">Could not load videos.</div>';
+                showToast(`Could not load videos: ${error.message}`, "error");
+                return false;
+            }
+
+            videos = data || [];
+            const existingIds = new Set(videos.map(video => video.id));
+            selectedIds = new Set([...selectedIds].filter(id => existingIds.has(id)));
+            render();
+            return true;
+        }
+
+        async function loadCurrentMedia() {
+            return activeMediaType === "photo" ? loadPhotos() : loadVideos();
+        }
+
+        function askDelete(ids, mediaType = activeMediaType) {
             if (!ids.length) return;
 
             pendingDeleteIds = [...new Set(ids)];
+            pendingDeleteType = mediaType;
             const count = pendingDeleteIds.length;
-
-            confirmText.textContent = count === 1
-                ? "This will permanently remove the photo from Supabase Storage and delete its database record."
-                : `This will permanently remove ${count} photos from Supabase Storage and delete their database records.`;
+            const label = mediaType === "photo" ? "photo" : "video";
+            confirmTitle.textContent = `Delete ${label}${count === 1 ? "" : "s"}?`;
+            confirmDelete.textContent = "Delete permanently";
+            confirmText.textContent = mediaType === "photo"
+                ? count === 1
+                    ? "This removes the original photo, its thumbnail, and its shared gallery record."
+                    : `This removes ${count} photos, their thumbnails, and their shared gallery records.`
+                : count === 1
+                    ? "This removes the video and its preview image from storage, then deletes its shared gallery record."
+                    : `This removes ${count} videos and their preview images from storage, then deletes their shared gallery records.`;
 
             confirmModal.classList.remove("hidden");
         }
@@ -1184,52 +1386,66 @@
         function closeConfirm() {
             confirmModal.classList.add("hidden");
             pendingDeleteIds = [];
+            pendingDeleteType = activeMediaType;
         }
 
-        async function deletePhotos(ids) {
+        async function deleteMediaOnServer(mediaType, ids, { skipStorage = false } = {}) {
+            const response = await fetch("/.netlify/functions/gallery-media-delete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mediaType, ids, skipStorage, sessionToken: managerSessionToken })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.error || `Could not delete the ${mediaType}.`);
+            return result;
+        }
+
+        async function deleteCurrentMedia(ids, mediaType = pendingDeleteType) {
             if (!ids.length) return;
 
             confirmDelete.disabled = true;
             confirmDelete.textContent = "Deleting...";
 
-            const records = photos.filter(photo => ids.includes(photo.id));
-            const paths = records.map(photo => photo.storage_path).filter(Boolean);
-
             try {
-                const { error: databaseError } = await supabaseClient
-                    .from("photos")
-                    .delete()
-                    .in("id", ids);
+                const result = await deleteMediaOnServer(mediaType, ids);
+                const deletedIds = Array.isArray(result.deletedIds) ? result.deletedIds : [];
+                const failed = Array.isArray(result.failed) ? result.failed : [];
 
-                if (databaseError) {
-                    throw new Error(`Database deletion failed: ${databaseError.message}`);
-                }
-
-                selectedIds = new Set(
-                    [...selectedIds].filter(id => !ids.includes(id))
-                );
-                photos = photos.filter(photo => !ids.includes(photo.id));
                 closeConfirm();
-                render();
-
-                if (paths.length) {
-                    const { error: storageError } = await supabaseClient
-                        .storage
-                        .from(BUCKET_NAME)
-                        .remove(paths);
-
-                    if (storageError) {
-                        showToast(
-                            `Database records deleted, but Storage cleanup failed: ${storageError.message}. Run "Clean missing" later or retry.`,
-                            "error"
-                        );
-                        await loadPhotos();
+                if (deletedIds.length) {
+                    const loaded = mediaType === "photo" ? await loadPhotos() : await loadVideos();
+                    if (!loaded) {
+                        showToast("The delete request completed, but the gallery could not be refreshed to confirm it.", "error");
+                        return;
+                    }
+                    const remaining = (mediaType === "photo" ? photos : videos)
+                        .some(item => deletedIds.includes(String(item.id)));
+                    if (remaining) {
+                        showToast("The server still returned an item after deletion. Refresh the gallery and try again.", "error");
                         return;
                     }
                 }
 
+                if (failed.length) {
+                    const failureMessage = failed[0]?.error || "Some items could not be deleted.";
+                    const removedCount = deletedIds.length;
+                    showToast(
+                        removedCount
+                            ? `${removedCount} deleted; ${failed.length} could not be deleted. ${failureMessage}`
+                            : failureMessage,
+                        "error"
+                    );
+                    return;
+                }
+
+                if (deletedIds.length !== ids.length) {
+                    showToast("The server did not confirm deletion for every selected item.", "error");
+                    return;
+                }
+
+                const label = mediaType === "photo" ? "photo" : "video";
                 showToast(
-                    `${ids.length} photo${ids.length === 1 ? "" : "s"} deleted permanently.`,
+                    `${deletedIds.length} ${label}${deletedIds.length === 1 ? "" : "s"} permanently deleted from shared storage and the gallery.`,
                     "success"
                 );
             } catch (error) {
@@ -1299,25 +1515,18 @@
                 }
 
                 const ids = missing.map(photo => photo.id);
-
-                const { error } = await supabaseClient
-                    .from("photos")
-                    .delete()
-                    .in("id", ids);
-
-                if (error) {
-                    throw new Error(`Could not clean missing records: ${error.message}`);
+                const result = await deleteMediaOnServer("photo", ids, { skipStorage: true });
+                if (result.failed?.length || result.deletedIds?.length !== ids.length) {
+                    throw new Error(result.failed?.[0]?.error || "Some missing records could not be removed.");
                 }
 
-                selectedIds = new Set(
-                    [...selectedIds].filter(id => !ids.includes(id))
-                );
-
-                photos = photos.filter(photo => !ids.includes(photo.id));
-                render();
+                const loaded = await loadPhotos();
+                if (!loaded || photos.some(photo => ids.includes(photo.id))) {
+                    throw new Error("The gallery still returned a missing photo record after cleanup.");
+                }
 
                 showToast(
-                    `${missing.length} missing database record${missing.length === 1 ? "" : "s"} removed. The gallery is clean now.`,
+                    `${missing.length} missing photo record${missing.length === 1 ? "" : "s"} removed from shared storage.`,
                     "success"
                 );
             } catch (error) {
@@ -1438,13 +1647,48 @@
         });
 
         deleteSelected.addEventListener("click", () => {
-            askDelete([...selectedIds]);
+            askDelete([...selectedIds], activeMediaType);
         });
 
         cancelDelete.addEventListener("click", closeConfirm);
 
         confirmDelete.addEventListener("click", () => {
-            deletePhotos(pendingDeleteIds);
+            deleteCurrentMedia(pendingDeleteIds, pendingDeleteType);
+        });
+
+        function setActiveMediaType(mediaType) {
+            if (activeMediaType === mediaType) return;
+            activeMediaType = mediaType;
+            selectedIds.clear();
+            photosTab.setAttribute("aria-selected", String(mediaType === "photo"));
+            videosTab.setAttribute("aria-selected", String(mediaType === "video"));
+            cleanupButton.hidden = mediaType !== "photo";
+            uploadButton.hidden = mediaType !== "photo";
+            searchInput.placeholder = mediaType === "photo"
+                ? "Search photo name or uploader..."
+                : "Search video title...";
+
+            const sizeOptions = sortSelect.querySelectorAll('[value="large"], [value="small"]');
+            sizeOptions.forEach(option => { option.disabled = mediaType === "video"; });
+            if (mediaType === "video" && ["large", "small"].includes(sortSelect.value)) {
+                sortSelect.value = "new";
+            }
+
+            updateSelectionUI();
+            loadCurrentMedia();
+        }
+
+        photosTab.addEventListener("click", () => setActiveMediaType("photo"));
+        videosTab.addEventListener("click", () => setActiveMediaType("video"));
+        searchInput.addEventListener("input", render);
+        sortSelect.addEventListener("change", render);
+        refreshButton.addEventListener("click", loadCurrentMedia);
+        cleanupButton.addEventListener("click", cleanMissingRecords);
+        uploadButton.addEventListener("click", () => fileInput.click());
+        fileInput.addEventListener("change", async event => {
+            const files = Array.from(event.target.files || []);
+            await uploadFiles(files);
+            fileInput.value = "";
         });
 
         confirmModal.addEventListener("click", event => {
@@ -1456,7 +1700,8 @@
         });
 
         async function init() {
-            await loadPhotos();
+            cleanupButton.hidden = false;
+            await loadCurrentMedia();
             const remoteLogs = await loadLoginLogsFromSupabase();
             if (remoteLogs && remoteLogs.length) {
                 localStorage.setItem("dtm_login_log", JSON.stringify(remoteLogs.slice(-500)));

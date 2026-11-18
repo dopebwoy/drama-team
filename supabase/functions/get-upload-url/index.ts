@@ -22,20 +22,28 @@ Deno.serve(async request => {
     const body = await request.json();
     const action = body.action;
 
-    // Matches the exact secrets you already saved in Supabase:
-    const endpoint = Deno.env.get("B2_ENDPOINT");
-    const region = Deno.env.get("B2_REGION") || "us-east-005";
-    const bucket = Deno.env.get("B2_BUCKET_NAME");
-    const accessKeyId = Deno.env.get("B2_KEY_ID");
-    const secretAccessKey = Deno.env.get("B2_APP_KEY");
+    const endpoint = Deno.env.get("B2_ENDPOINT")?.trim();
+    const region = Deno.env.get("B2_REGION")?.trim();
+    const bucket = Deno.env.get("B2_BUCKET_NAME")?.trim();
+    const accessKeyId = Deno.env.get("B2_KEY_ID")?.trim();
+    const secretAccessKey = Deno.env.get("B2_APP_KEY")?.trim();
 
     if (!endpoint || !region || !bucket || !accessKeyId || !secretAccessKey) {
       console.error("Video signing is missing one or more B2 secrets.");
       return jsonResponse({ error: "Video uploads and playback are not configured yet." }, 503);
     }
 
+    let endpointUrl: URL;
+    try {
+      endpointUrl = new URL(endpoint);
+    } catch {
+      return jsonResponse({ error: "B2_ENDPOINT must be a valid HTTPS endpoint." }, 503);
+    }
+    if (endpointUrl.protocol !== "https:") {
+      return jsonResponse({ error: "B2_ENDPOINT must use HTTPS." }, 503);
+    }
     const s3 = new S3Client({
-      endpoint,
+      endpoint: endpointUrl.toString().replace(/\/$/, ""),
       region,
       forcePathStyle: true,
       credentials: { accessKeyId, secretAccessKey }
@@ -52,7 +60,7 @@ Deno.serve(async request => {
         return jsonResponse({ error: "The selected file is not a supported video type." }, 400);
       }
       if (!Number.isSafeInteger(fileSize) || fileSize < 1 || fileSize > MAX_VIDEO_FILE_SIZE) {
-        return jsonResponse({ error: "Videos must be smaller than 5 GB." }, 400);
+        return jsonResponse({ error: "Videos must be 5 GB or smaller." }, 400);
       }
       if (title.length > 255) return jsonResponse({ error: "Video titles must be 255 characters or fewer." }, 400);
 
@@ -68,8 +76,8 @@ Deno.serve(async request => {
     }
 
     if (action === "watch") {
-      const fileKey = typeof body.fileKey === "string" ? body.fileKey : body.fileName;
-      if (typeof fileKey !== "string" || !/^videos\/[0-9a-f-]{36}(?:\.[a-z0-9]{1,10})?$/i.test(fileKey)) {
+      const fileKey = typeof body.fileKey === "string" ? body.fileKey : "";
+      if (!/^videos\/[0-9a-f-]{36}(?:\.[a-z0-9]{1,10})?$/i.test(fileKey)) {
         return jsonResponse({ error: "That video key is not valid." }, 400);
       }
 
@@ -83,7 +91,7 @@ Deno.serve(async request => {
 
     return jsonResponse({ error: "Action must be upload or watch." }, 400);
   } catch (error) {
-    console.error("Could not prepare the video URL:", error);
+    console.error("Could not prepare the B2 video URL:", error);
     return jsonResponse({ error: "Could not prepare this video request. Please try again." }, 500);
   }
 });

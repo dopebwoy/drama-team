@@ -9,6 +9,7 @@
     "dev": "node scripts/dev-server.mjs",
     "test": "node --test",
     "test:livekit": "node scripts/check-livekit.mjs",
+    "b2:cors": "node scripts/configure-b2-cors.mjs",
     "vapid:generate": "node scripts/generate-vapid-keys.mjs",
     "push:check": "node scripts/check-push-setup.mjs"
   },

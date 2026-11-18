@@ -180,6 +180,270 @@
             color: var(--text);
         }
 
+        .latest-section {
+            padding: 4px 0 44px;
+        }
+
+        .latest-panel {
+            padding: 26px;
+            overflow: hidden;
+            text-align: left;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            box-shadow: 0 22px 48px var(--shadow);
+        }
+
+        .latest-header,
+        .latest-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .latest-kicker {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--accent);
+            font: 700 0.72rem/1.3 system-ui, sans-serif;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .latest-title {
+            margin: 0;
+            color: var(--gold-soft);
+            font-size: clamp(1.45rem, 3vw, 2rem);
+        }
+
+        .latest-description {
+            margin: 7px 0 0;
+            color: var(--muted);
+            font: 0.92rem/1.5 system-ui, sans-serif;
+        }
+
+        .latest-controls {
+            display: flex;
+            flex: 0 0 auto;
+            gap: 8px;
+        }
+
+        .latest-arrow {
+            display: grid;
+            width: 42px;
+            height: 42px;
+            place-items: center;
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.07);
+            color: var(--text);
+            font: 700 1.4rem/1 system-ui, sans-serif;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .latest-arrow:hover:not(:disabled) {
+            transform: translateY(-1px);
+            background: rgba(230, 201, 137, 0.18);
+        }
+
+        .latest-arrow:disabled {
+            cursor: default;
+            opacity: 0.38;
+        }
+
+        .latest-rail {
+            display: flex;
+            gap: 14px;
+            margin: 20px -4px 0;
+            padding: 4px 4px 12px;
+            overflow-x: auto;
+            overscroll-behavior-inline: contain;
+            scroll-behavior: smooth;
+            scroll-padding-inline: 4px;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .latest-rail::-webkit-scrollbar { display: none; }
+
+        .latest-card {
+            position: relative;
+            display: block;
+            flex: 0 0 205px;
+            aspect-ratio: 4 / 5;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 20px;
+            background: #17232c;
+            color: #fff;
+            text-decoration: none;
+            scroll-snap-align: start;
+            isolation: isolate;
+        }
+
+        .latest-card:focus-visible,
+        .latest-arrow:focus-visible,
+        .latest-view-all:focus-visible {
+            outline: 3px solid var(--gold-soft);
+            outline-offset: 3px;
+        }
+
+        .latest-card:hover .latest-image { transform: scale(1.045); }
+
+        .latest-media {
+            position: absolute;
+            z-index: -2;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            background: linear-gradient(145deg, #314f58, #18212c 60%, #11161d);
+        }
+
+        .latest-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.35s ease;
+        }
+
+        .latest-video-media .latest-image {
+            position: absolute;
+            inset: 0;
+        }
+
+        .latest-video-art {
+            display: grid;
+            justify-items: center;
+            gap: 9px;
+            color: rgba(255, 255, 255, 0.92);
+            font: 700 0.76rem/1 system-ui, sans-serif;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .latest-play-icon {
+            display: grid;
+            width: 62px;
+            height: 62px;
+            place-items: center;
+            padding-left: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.52);
+            border-radius: 50%;
+            background: rgba(9, 14, 19, 0.42);
+            color: var(--gold-soft);
+            font: 1.4rem/1 system-ui, sans-serif;
+        }
+
+        .latest-card::after {
+            position: absolute;
+            z-index: -1;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(7, 11, 15, 0.2) 0%, transparent 32%, rgba(7, 11, 15, 0.84) 100%);
+            content: "";
+        }
+
+        .latest-kind {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            padding: 6px 9px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 999px;
+            background: rgba(10, 14, 19, 0.56);
+            color: #fff;
+            font: 700 0.65rem/1 system-ui, sans-serif;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            backdrop-filter: blur(8px);
+        }
+
+        .latest-card-copy {
+            position: absolute;
+            right: 15px;
+            bottom: 16px;
+            left: 15px;
+        }
+
+        .latest-card-title {
+            display: -webkit-box;
+            overflow: hidden;
+            color: #fff;
+            font: 700 0.98rem/1.35 system-ui, sans-serif;
+            overflow-wrap: anywhere;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+        }
+
+        .latest-card-date {
+            display: block;
+            margin-top: 7px;
+            color: rgba(255, 255, 255, 0.78);
+            font: 0.76rem/1.3 system-ui, sans-serif;
+        }
+
+        .latest-status {
+            flex: 0 0 100%;
+            min-height: 170px;
+            display: grid;
+            place-items: center;
+            margin: 0;
+            padding: 20px;
+            border: 1px dashed var(--line);
+            border-radius: 18px;
+            color: var(--muted);
+            font: 0.9rem/1.5 system-ui, sans-serif;
+            text-align: center;
+        }
+
+        .latest-footer {
+            margin-top: 2px;
+            color: var(--muted);
+            font: 0.8rem/1.4 system-ui, sans-serif;
+        }
+
+        .latest-view-all {
+            flex: 0 0 auto;
+            color: var(--gold-soft);
+            font-weight: 700;
+            text-decoration-thickness: 1px;
+            text-underline-offset: 3px;
+        }
+
+        .meeting-status-section { padding: 0 0 46px; }
+
+        .meeting-live-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 22px;
+            padding: 20px 24px;
+            border: 1px solid rgba(255, 105, 114, 0.42);
+            border-radius: 20px;
+            background: linear-gradient(110deg, rgba(110, 33, 43, 0.34), var(--panel) 68%);
+            box-shadow: 0 18px 42px var(--shadow);
+        }
+
+        .meeting-live-copy { display: flex; align-items: flex-start; gap: 14px; }
+
+        .meeting-live-dot {
+            flex: 0 0 auto;
+            width: 12px;
+            height: 12px;
+            margin-top: 7px;
+            border-radius: 50%;
+            background: #ff626d;
+            box-shadow: 0 0 0 6px rgba(255, 98, 109, 0.14), 0 0 18px rgba(255, 98, 109, 0.55);
+        }
+
+        .meeting-live-title { margin: 0; color: #fff; font-size: clamp(1.05rem, 2.3vw, 1.3rem); }
+        .meeting-live-detail { margin: 5px 0 0; color: var(--muted); font: 0.9rem/1.5 system-ui, sans-serif; }
+        .meeting-live-join { flex: 0 0 auto; }
+        .meeting-live-card[hidden] { display: none; }
+
         footer {
             padding: 30px 0 50px;
             color: var(--muted);
@@ -210,6 +474,31 @@
             .btn {
                 width: 100%;
             }
+
+            .latest-section,
+            .meeting-status-section { padding-bottom: 34px; }
+            .latest-panel { padding: 21px 17px; border-radius: 21px; }
+            .latest-header { align-items: flex-start; }
+            .latest-card { flex-basis: clamp(155px, 38vw, 190px); }
+            .meeting-live-card { align-items: stretch; flex-direction: column; padding: 19px; }
+            .meeting-live-join { width: 100%; }
+        }
+
+        @media (max-width: 460px) {
+            .container { width: min(1100px, 92%); }
+            .latest-header { gap: 10px; }
+            .latest-controls { gap: 6px; }
+            .latest-arrow { width: 38px; height: 38px; }
+            .latest-description { max-width: 240px; font-size: 0.84rem; }
+            .latest-card { flex-basis: min(72vw, 178px); }
+            .latest-footer { align-items: flex-start; flex-direction: column; gap: 8px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .latest-rail { scroll-behavior: auto; }
+            .latest-card,
+            .latest-image,
+            .latest-arrow { transition: none; }
         }
     </style>
     <!-- Google tag (gtag.js) -->
@@ -247,11 +536,265 @@
                 </div>
             </div>
         </section>
+
+        <section class="latest-section" aria-labelledby="latestTitle">
+            <div class="latest-panel">
+                <div class="latest-header">
+                    <div>
+                        <span class="latest-kicker">Fresh from the gallery</span>
+                        <h2 class="latest-title" id="latestTitle">Latest uploads</h2>
+                        <p class="latest-description">Recent photos and videos from Drama Team Family.</p>
+                    </div>
+                    <div class="latest-controls" aria-label="Latest upload controls">
+                        <button class="latest-arrow" id="latestPrevious" type="button" aria-label="Scroll to newer uploads" disabled>&lsaquo;</button>
+                        <button class="latest-arrow" id="latestNext" type="button" aria-label="Scroll to older uploads" disabled>&rsaquo;</button>
+                    </div>
+                </div>
+
+                <div class="latest-rail" id="latestRail" role="list" tabindex="0" aria-label="Latest gallery uploads">
+                    <p class="latest-status" role="status" aria-live="polite">Loading recent uploads&hellip;</p>
+                </div>
+
+                <div class="latest-footer">
+                    <span id="latestHint">Newest first. Swipe left to see older uploads.</span>
+                    <a class="latest-view-all" href="store.html">View all uploads</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="meeting-status-section" aria-label="Live meeting status">
+            <div class="meeting-live-card" id="meetingLiveCard" hidden>
+                <div class="meeting-live-copy">
+                    <span class="meeting-live-dot" aria-hidden="true"></span>
+                    <div>
+                        <h2 class="meeting-live-title">Live video call in progress</h2>
+                        <p class="meeting-live-detail" id="meetingLiveDetail" aria-live="polite"></p>
+                    </div>
+                </div>
+                <a class="btn btn-primary meeting-live-join" href="meeting.html">Join live meeting</a>
+            </div>
+        </section>
     </main>
 
     <footer>
         © 2026 Drama Team Family ES Rugabano| blessed partners.🥱
     </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        (() => {
+            const SUPABASE_URL = "https://fedwjrefdabcbbklaafz.supabase.co";
+            const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_wL7XncIhcH0fqjL_Mxo4Lg_U5z_2edi";
+            const rail = document.getElementById("latestRail");
+            const previousButton = document.getElementById("latestPrevious");
+            const nextButton = document.getElementById("latestNext");
+            const hint = document.getElementById("latestHint");
+
+            function updateScrollButtons() {
+                const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth);
+                previousButton.disabled = rail.scrollLeft <= 2;
+                nextButton.disabled = rail.scrollLeft >= maxScroll - 2;
+                const hasOverflow = maxScroll > 2;
+                hint.textContent = hasOverflow
+                    ? "Newest first. Swipe left to see older uploads."
+                    : "Newest photos and videos from the gallery.";
+            }
+
+            function scrollStories(direction) {
+                const firstCard = rail.querySelector(".latest-card");
+                const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : 205;
+                const gap = Number.parseFloat(getComputedStyle(rail).gap) || 14;
+                const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                rail.scrollBy({ left: direction * (cardWidth + gap), behavior: reduceMotion ? "auto" : "smooth" });
+            }
+
+            function storageUrl(client, path) {
+                const { data } = client.storage.from("photos").getPublicUrl(path);
+                return data.publicUrl;
+            }
+
+            function formatUploadDate(value) {
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return "Recently uploaded";
+                return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
+            }
+
+            function createUploadCard(client, upload) {
+                const card = document.createElement("a");
+                card.className = "latest-card";
+                card.href = "store.html";
+                card.setAttribute("role", "listitem");
+                card.setAttribute("aria-label", `${upload.kind}: ${upload.title}`);
+
+                const media = document.createElement("div");
+                media.className = "latest-media";
+
+                if (upload.kind === "Photo" && upload.storage_path) {
+                    const image = document.createElement("img");
+                    image.className = "latest-image";
+                    image.alt = "";
+                    image.loading = "lazy";
+                    image.decoding = "async";
+                    image.dataset.originalUrl = storageUrl(client, upload.storage_path);
+                    image.src = storageUrl(client, `${upload.storage_path}.thumb.webp`);
+                    image.addEventListener("error", () => {
+                        if (image.src !== image.dataset.originalUrl) {
+                            image.src = image.dataset.originalUrl;
+                        } else {
+                            image.remove();
+                        }
+                    }, { once: false });
+                    media.appendChild(image);
+                } else {
+                    media.classList.add("latest-video-media");
+                    if (upload.thumbnail_path) {
+                        const image = document.createElement("img");
+                        image.className = "latest-image";
+                        image.alt = "";
+                        image.loading = "lazy";
+                        image.decoding = "async";
+                        image.src = storageUrl(client, upload.thumbnail_path);
+                        image.addEventListener("error", () => image.remove(), { once: true });
+                        media.appendChild(image);
+                    }
+                    const art = document.createElement("div");
+                    art.className = "latest-video-art";
+                    const play = document.createElement("span");
+                    play.className = "latest-play-icon";
+                    play.setAttribute("aria-hidden", "true");
+                    play.textContent = "▶";
+                    const label = document.createElement("span");
+                    label.textContent = "Video";
+                    art.append(play, label);
+                    media.appendChild(art);
+                }
+
+                const kind = document.createElement("span");
+                kind.className = "latest-kind";
+                kind.textContent = upload.kind;
+
+                const copy = document.createElement("span");
+                copy.className = "latest-card-copy";
+                const title = document.createElement("span");
+                title.className = "latest-card-title";
+                title.textContent = upload.title;
+                const date = document.createElement("span");
+                date.className = "latest-card-date";
+                date.textContent = formatUploadDate(upload.created_at);
+                copy.append(title, date);
+
+                card.append(media, kind, copy);
+                return card;
+            }
+
+            async function loadLatestUploads() {
+                if (!window.supabase?.createClient) {
+                    rail.innerHTML = '<p class="latest-status" role="status">Latest uploads are temporarily unavailable.</p>';
+                    return;
+                }
+
+                const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+                const [photoResult, videoResult] = await Promise.all([
+                    client.from("photos").select("file_name, storage_path, created_at").order("created_at", { ascending: false }).limit(5),
+                    client.from("videos").select("title, thumbnail_path, created_at").order("created_at", { ascending: false }).limit(5)
+                ]);
+
+                const uploads = [];
+                if (!photoResult.error) {
+                    (photoResult.data || []).forEach(photo => uploads.push({
+                        kind: "Photo",
+                        title: photo.file_name || "Drama Team photo",
+                        storage_path: photo.storage_path,
+                        created_at: photo.created_at
+                    }));
+                } else {
+                    console.warn("Could not load recent photos:", photoResult.error.message);
+                }
+                if (!videoResult.error) {
+                    (videoResult.data || []).forEach(video => uploads.push({
+                        kind: "Video",
+                        title: video.title || "Drama Team video",
+                        thumbnail_path: video.thumbnail_path,
+                        created_at: video.created_at
+                    }));
+                } else {
+                    console.warn("Could not load recent videos:", videoResult.error.message);
+                }
+
+                uploads.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+                const latest = uploads.slice(0, 5);
+                rail.replaceChildren();
+
+                if (!latest.length) {
+                    const empty = document.createElement("p");
+                    empty.className = "latest-status";
+                    empty.setAttribute("role", "status");
+                    empty.textContent = photoResult.error && videoResult.error
+                        ? "Latest uploads are temporarily unavailable. Please visit the gallery."
+                        : "No uploads yet. New photos and videos will appear here.";
+                    rail.appendChild(empty);
+                } else {
+                    latest.forEach(upload => rail.appendChild(createUploadCard(client, upload)));
+                }
+
+                requestAnimationFrame(updateScrollButtons);
+            }
+
+            previousButton.addEventListener("click", () => scrollStories(-1));
+            nextButton.addEventListener("click", () => scrollStories(1));
+            rail.addEventListener("scroll", updateScrollButtons, { passive: true });
+            window.addEventListener("resize", updateScrollButtons);
+            loadLatestUploads().catch(error => {
+                console.error("Could not load latest uploads:", error);
+                rail.innerHTML = '<p class="latest-status" role="status">Latest uploads are temporarily unavailable.</p>';
+                updateScrollButtons();
+            });
+        })();
+    </script>
+
+    <script>
+        (() => {
+            const card = document.getElementById("meetingLiveCard");
+            const detail = document.getElementById("meetingLiveDetail");
+            let checking = false;
+
+            async function refreshMeetingStatus() {
+                if (checking) return;
+                checking = true;
+                try {
+                    const response = await fetch("/.netlify/functions/livekit-status", {
+                        headers: { Accept: "application/json" },
+                        cache: "no-store"
+                    });
+                    if (!response.ok) {
+                        card.hidden = true;
+                        return;
+                    }
+
+                    const status = await response.json();
+                    const count = Number(status.participantCount) || 0;
+                    if (!status.ongoing || count < 1) {
+                        card.hidden = true;
+                        return;
+                    }
+
+                    detail.textContent = `${count} ${count === 1 ? "person is" : "people are"} in the room now.`;
+                    card.hidden = false;
+                } catch {
+                    card.hidden = true;
+                } finally {
+                    checking = false;
+                }
+            }
+
+            refreshMeetingStatus();
+            window.setInterval(refreshMeetingStatus, 30000);
+            document.addEventListener("visibilitychange", () => {
+                if (!document.hidden) refreshMeetingStatus();
+            });
+        })();
+    </script>
 
     <script>
         const password = "drama";

@@ -141,6 +141,20 @@
                 sans-serif;
         }
 
+        #media-tabs { display: flex; align-items: center; gap: 8px; }
+
+        button.input-button.media-tab {
+            border: 1px solid #46515d;
+            background: var(--surface-2);
+            color: var(--text);
+        }
+
+        .media-tab[aria-selected="true"] {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #17130d;
+        }
+
         .tool {
             display: flex;
             align-items: center;
@@ -163,24 +177,6 @@
         }
 
         [hidden] { display: none !important; }
-
-        #media-tabs {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        button.input-button.media-tab {
-            border: 1px solid #46515d;
-            background: var(--surface-2);
-            color: var(--text);
-        }
-
-        .media-tab[aria-selected="true"] {
-            border-color: var(--accent);
-            background: var(--accent);
-            color: #17130d;
-        }
 
         button.input-button {
             border: 0;
@@ -206,7 +202,7 @@
             font: inherit;
         }
 
-        #container, #videoContainer {
+        #container {
             min-height: 400px;
             margin: 0;
             padding: 20px 12px;
@@ -220,7 +216,16 @@
         }
 
         #videoContainer {
+            min-height: 400px;
+            margin: 0;
+            padding: 20px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            display: grid;
             grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 18px;
+            align-content: start;
         }
 
         #container.large-view {
@@ -487,7 +492,7 @@
             <div class="tool" id="videoControls" hidden>
                 <label for="videoTitle">Title</label>
                 <input type="text" id="videoTitle" maxlength="255" placeholder="Video title" aria-label="Video title">
-                <input type="file" id="videoInput" accept="video/*" hidden>
+                <input type="file" id="videoInput" accept="video/*" multiple hidden>
                 <label for="videoInput" class="input-button" id="videoUploadLabel">Upload videos</label>
             </div>
 
@@ -595,6 +600,22 @@
             });
         }
 
+        function switchMedia(mediaType) {
+            const showVideos = mediaType === "videos";
+            photosTab.setAttribute("aria-selected", String(!showVideos));
+            videosTab.setAttribute("aria-selected", String(showVideos));
+            photoControls.hidden = showVideos;
+            videoControls.hidden = !showVideos;
+            sortControl.hidden = showVideos;
+            viewControl.hidden = showVideos;
+            container.hidden = showVideos;
+            videoContainer.hidden = !showVideos;
+            if (showVideos) loadVideos();
+        }
+
+        photosTab.addEventListener("click", () => switchMedia("photos"));
+        videosTab.addEventListener("click", () => switchMedia("videos"));
+
         if (logoutButton) {
             logoutButton.addEventListener("click", () => {
                 localStorage.removeItem("active");
@@ -668,21 +689,6 @@
             return getPublicUrl(getThumbnailPath(storagePath));
         }
 
-        function switchMedia(mediaType) {
-            const showVideos = mediaType === "videos";
-            photosTab.setAttribute("aria-selected", String(!showVideos));
-            videosTab.setAttribute("aria-selected", String(showVideos));
-            photoControls.hidden = showVideos;
-            videoControls.hidden = !showVideos;
-            sortControl.hidden = showVideos;
-            viewControl.hidden = showVideos;
-            container.hidden = showVideos;
-            videoContainer.hidden = !showVideos;
-        }
-
-        photosTab.addEventListener("click", () => switchMedia("photos"));
-        videosTab.addEventListener("click", () => switchMedia("videos"));
-
         async function createThumbnail(blob) {
             if (!("createImageBitmap" in window)) {
                 throw new Error("This browser cannot create thumbnails. Try a recent version of Chrome, Edge, or Firefox.");
@@ -714,6 +720,93 @@
             );
             if (!thumbnail) throw new Error("Could not encode the thumbnail as WebP.");
             return thumbnail;
+        }
+
+        function waitForVideoEvent(video, readyEvent, timeoutMs = 15000) {
+            return new Promise((resolve, reject) => {
+                const cleanup = () => {
+                    clearTimeout(timeout);
+                    video.removeEventListener(readyEvent, onReady);
+                    video.removeEventListener("error", onError);
+                };
+                const onReady = () => {
+                    cleanup();
+                    resolve();
+                };
+                const onError = () => {
+                    cleanup();
+                    reject(new Error("This video format could not be previewed in this browser."));
+                };
+                const timeout = setTimeout(() => {
+                    cleanup();
+                    reject(new Error("Timed out while preparing the video preview."));
+                }, timeoutMs);
+                video.addEventListener(readyEvent, onReady, { once: true });
+                video.addEventListener("error", onError, { once: true });
+            });
+        }
+
+        async function createVideoThumbnail(file) {
+            const objectUrl = URL.createObjectURL(file);
+            const video = document.createElement("video");
+            video.preload = "metadata";
+            video.muted = true;
+            video.playsInline = true;
+
+            try {
+                const metadataReady = waitForVideoEvent(video, "loadedmetadata");
+                video.src = objectUrl;
+                video.load();
+                await metadataReady;
+                if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+                    const firstFrameReady = waitForVideoEvent(video, "loadeddata");
+                    await firstFrameReady;
+                }
+
+                const targetTime = Number.isFinite(video.duration) && video.duration > 0
+                    ? Math.min(1, video.duration / 2)
+                    : 0;
+                if (targetTime > 0) {
+                    video.currentTime = targetTime;
+                    await waitForVideoEvent(video, "seeked");
+                }
+
+                if (!video.videoWidth || !video.videoHeight) {
+                    throw new Error("The video has no previewable frame.");
+                }
+
+                const width = 480;
+                const height = 270;
+                const scale = Math.max(width / video.videoWidth, height / video.videoHeight);
+                const cropWidth = width / scale;
+                const cropHeight = height / scale;
+                const canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+                const context = canvas.getContext("2d");
+                if (!context) throw new Error("Could not create a video preview canvas.");
+
+                context.drawImage(
+                    video,
+                    (video.videoWidth - cropWidth) / 2,
+                    (video.videoHeight - cropHeight) / 2,
+                    cropWidth,
+                    cropHeight,
+                    0,
+                    0,
+                    width,
+                    height
+                );
+
+                const thumbnail = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.82));
+                if (!thumbnail) throw new Error("Could not encode the video preview.");
+                return thumbnail;
+            } finally {
+                video.pause();
+                video.removeAttribute("src");
+                video.load();
+                URL.revokeObjectURL(objectUrl);
+            }
         }
 
         async function sha256File(file) {
@@ -857,11 +950,11 @@
         }
 
         async function loadVideos() {
-            videoContainer.innerHTML = '<p id="videoDefaults" class="gallery-empty">Loading videos...</p>';
+            videoContainer.innerHTML = '<p class="gallery-empty">Loading videos...</p>';
 
             const { data, error } = await supabaseClient
                 .from("videos")
-                .select("id, title, file_key, created_at")
+                .select("id, title, file_key, thumbnail_path, created_at")
                 .order("created_at", { ascending: false });
 
             if (error) {
@@ -913,8 +1006,9 @@
                 player.playsInline = true;
                 player.title = item.title || "Drama Team video";
                 player.preload = "none";
+                if (item.thumbnail_path) player.poster = getPublicUrl(item.thumbnail_path);
                 player.addEventListener("error", () => {
-                    showMessage(`Could not play ${item.title || "this video"}. Check that the B2 key has read access and the video format is supported by this browser.`, "error");
+                    showMessage(`Could not play ${item.title || "this video"}. Check that the B2 object exists and the browser supports its format.`, "error");
                 }, { once: true });
 
                 getPlayableVideoUrl(item.file_key)
@@ -972,9 +1066,9 @@
                 });
                 request.addEventListener("load", () => {
                     if (request.status >= 200 && request.status < 300) resolve();
-                    else reject(new Error(`Backblaze upload failed (${request.status}). Check the bucket CORS rule and try again.`));
+                    else reject(new Error(`B2 upload failed (${request.status}). Check the bucket CORS rule and try again.`));
                 });
-                request.addEventListener("error", () => reject(new Error("Video upload failed. Check your connection and Backblaze bucket CORS settings.")));
+                request.addEventListener("error", () => reject(new Error("Video upload failed. Check your connection and the B2 bucket CORS settings.")));
                 request.addEventListener("abort", () => reject(new Error("Video upload was cancelled.")));
                 request.send(file);
             });
@@ -990,19 +1084,46 @@
 
             videoProgress.value = 0;
             videoUploadStatus.hidden = false;
-            videoProgressText.textContent = `Preparing ${index}/${total}: ${file.name}`;
+            videoProgressText.textContent = `Creating preview ${index}/${total}: ${file.name}`;
 
-            const upload = await requestVideoUploadUrl(file, title);
-            await putVideoFile(upload.uploadUrl, file, (loaded, size) => {
-                videoProgress.value = Math.round((loaded / size) * 100);
-                videoProgressText.textContent = `Uploading ${index}/${total}: ${file.name} (${videoProgress.value}%)`;
-            });
+            let thumbnailPath = null;
+            try {
+                const thumbnail = await createVideoThumbnail(file);
+                const candidatePath = `video-thumbnails/${crypto.randomUUID()}.jpg`;
+                const { error: thumbnailError } = await supabaseClient.storage
+                    .from(BUCKET_NAME)
+                    .upload(candidatePath, thumbnail, {
+                        cacheControl: "31536000",
+                        contentType: "image/jpeg",
+                        upsert: false
+                    });
+                if (thumbnailError) throw thumbnailError;
+                thumbnailPath = candidatePath;
+            } catch (error) {
+                console.warn(`Could not save a preview for ${file.name}:`, error);
+            }
 
-            const { error } = await supabaseClient.from("videos").insert({
-                title: upload.title,
-                file_key: upload.fileKey
-            });
-            if (error) throw new Error(`Video uploaded, but could not save its gallery record: ${error.message}`);
+            try {
+                const upload = await requestVideoUploadUrl(file, title);
+                await putVideoFile(upload.uploadUrl, file, (loaded, size) => {
+                    videoProgress.value = Math.round((loaded / size) * 100);
+                    videoProgressText.textContent = `Uploading ${index}/${total}: ${file.name} (${videoProgress.value}%)`;
+                });
+
+                const { error } = await supabaseClient.from("videos").insert({
+                    title: upload.title,
+                    file_key: upload.fileKey,
+                    thumbnail_path: thumbnailPath
+                });
+                if (error) throw new Error(`Video uploaded, but could not save its gallery record: ${error.message}`);
+            } catch (error) {
+                if (thumbnailPath) {
+                    await supabaseClient.storage.from(BUCKET_NAME).remove([thumbnailPath]).catch(() => {});
+                }
+                throw error;
+            }
+
+            return Boolean(thumbnailPath);
         }
 
         videoInput.addEventListener("change", async event => {
@@ -1017,11 +1138,16 @@
 
             const failed = [];
             let uploaded = 0;
+            let previewsMissing = 0;
             const selectedTitle = videoTitleInput.value.trim();
             for (let index = 0; index < files.length; index++) {
                 try {
-                    await uploadVideo(files[index], selectedTitle || files[index].name.replace(/\.[^.]+$/, ""), index + 1, files.length);
+                    const title = files.length === 1 && selectedTitle
+                        ? selectedTitle
+                        : files[index].name.replace(/\.[^.]+$/, "");
+                    const hasPreview = await uploadVideo(files[index], title, index + 1, files.length);
                     uploaded++;
+                    if (!hasPreview) previewsMissing++;
                 } catch (error) {
                     console.error(error);
                     failed.push(`${files[index].name}: ${error.message}`);
@@ -1041,7 +1167,10 @@
             if (failed.length) {
                 showMessage(`${uploaded} uploaded; ${failed.length} failed. ${failed.join(" | ")}`, "error");
             } else {
-                showMessage(`${uploaded} video${uploaded === 1 ? "" : "s"} uploaded.`, "success");
+                const previewNote = previewsMissing
+                    ? ` ${previewsMissing} preview${previewsMissing === 1 ? " was" : "s were"} unavailable.`
+                    : "";
+                showMessage(`${uploaded} video${uploaded === 1 ? "" : "s"} uploaded.${previewNote}`, "success");
             }
         });
 
@@ -1276,7 +1405,6 @@
 
         loadUserStatus();
         loadPhotos();
-        loadVideos();
        
     </script>
 </body>

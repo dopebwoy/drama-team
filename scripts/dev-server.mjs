@@ -48,7 +48,7 @@ async function serveFunction(request, response, handler) {
 const server = createServer(async (request, response) => {
   try {
     const pathname = new URL(request.url, 'http://localhost').pathname;
-    const functionMatch = pathname.match(/^\/.netlify\/functions\/(livekit-token|livekit-moderate|manager-login|push-config|push-subscribe|push-unsubscribe)$/);
+    const functionMatch = pathname.match(/^\/.netlify\/functions\/(gallery-media-delete|livekit-token|livekit-status|livekit-moderate|manager-login|push-config|push-subscribe|push-unsubscribe)$/);
     if (functionMatch) {
       const functionModule = functionMatch[1] === 'livekit-token'
         ? { default: tokenHandler }

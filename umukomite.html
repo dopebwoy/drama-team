@@ -331,6 +331,14 @@
             letter-spacing: .08em;
         }
 
+        .video-placeholder.video-missing {
+            padding: 14px;
+            background: linear-gradient(145deg, #3b2628, #171215);
+            color: #ffb0b0;
+            font-size: 11px;
+            text-align: center;
+        }
+
         .video-preview-image {
             position: absolute;
             inset: 0;
@@ -1163,25 +1171,32 @@
             const frame = document.createElement("div");
             frame.className = "photo-frame";
 
-            const img = document.createElement("img");
-            img.src = getPublicUrl(photo.storage_path);
-            img.alt = photo.file_name || "Drama Team photo";
-            img.loading = "lazy";
-            img.decoding = "async";
-
-            img.addEventListener("click", () => {
-                window.open(img.src, "_blank", "noopener,noreferrer");
-            });
-
-            img.addEventListener("error", () => {
+            if (photo.storageAvailable === false) {
                 const broken = document.createElement("div");
                 broken.className = "broken";
-                broken.textContent = "Image unavailable";
-                frame.replaceChildren(broken);
-                updateStats();
-            }, { once: true });
+                broken.textContent = "Original image missing — delete this stale record.";
+                frame.appendChild(broken);
+            } else {
+                const img = document.createElement("img");
+                img.src = getPublicUrl(photo.storage_path);
+                img.alt = photo.file_name || "Drama Team photo";
+                img.loading = "lazy";
+                img.decoding = "async";
 
-            frame.appendChild(img);
+                img.addEventListener("click", () => {
+                    window.open(img.src, "_blank", "noopener,noreferrer");
+                });
+
+                img.addEventListener("error", () => {
+                    const broken = document.createElement("div");
+                    broken.className = "broken";
+                    broken.textContent = "Image unavailable";
+                    frame.replaceChildren(broken);
+                    updateStats();
+                }, { once: true });
+
+                frame.appendChild(img);
+            }
 
             const body = document.createElement("div");
             body.className = "photo-body";
@@ -1238,8 +1253,15 @@
             const frame = document.createElement("div");
             frame.className = "video-placeholder";
             frame.setAttribute("role", "img");
-            frame.setAttribute("aria-label", `Preview for ${video.title || "video"}`);
-            if (video.thumbnail_path) {
+            if (video.storageAvailable === false) {
+                frame.setAttribute("aria-label", `Video file missing for ${video.title || "video"}`);
+                frame.classList.add("video-missing");
+                frame.appendChild(document.createTextNode("VIDEO FILE MISSING"));
+            } else if (video.storageAvailable !== true) {
+                frame.setAttribute("aria-label", `Could not verify ${video.title || "video"}`);
+                frame.appendChild(document.createTextNode("AVAILABILITY UNKNOWN"));
+            } else if (video.thumbnail_path) {
+                frame.setAttribute("aria-label", `Preview for ${video.title || "video"}`);
                 const preview = document.createElement("img");
                 preview.className = "video-preview-image";
                 preview.src = getPublicUrl(video.thumbnail_path);
@@ -1249,13 +1271,16 @@
                 preview.addEventListener("error", () => preview.remove(), { once: true });
                 frame.appendChild(preview);
             } else {
+                frame.setAttribute("aria-label", `Preview for ${video.title || "video"}`);
                 frame.appendChild(document.createTextNode("VIDEO"));
             }
-            const playIcon = document.createElement("span");
-            playIcon.className = "video-preview-play";
-            playIcon.setAttribute("aria-hidden", "true");
-            playIcon.textContent = "▶";
-            frame.appendChild(playIcon);
+            if (video.storageAvailable === true) {
+                const playIcon = document.createElement("span");
+                playIcon.className = "video-preview-play";
+                playIcon.setAttribute("aria-hidden", "true");
+                playIcon.textContent = "▶";
+                frame.appendChild(playIcon);
+            }
 
             const body = document.createElement("div");
             body.className = "photo-body";
@@ -1265,7 +1290,9 @@
 
             const meta = document.createElement("div");
             meta.className = "photo-meta";
-            meta.textContent = formatDate(video.created_at);
+            meta.textContent = formatDate(video.created_at) +
+                (video.storageAvailable === false ? " · File missing" :
+                    video.storageAvailable === null || video.storageAvailable === undefined ? " · Availability unknown" : "");
 
             const actions = document.createElement("div");
             actions.className = "photo-actions";
@@ -1317,16 +1344,27 @@
                 .select("id, file_name, storage_path, uploaded_by, created_at, file_hash, file_size")
                 .order("created_at", { ascending: false });
 
-            document.body.classList.remove("loading");
-
             if (error) {
+                document.body.classList.remove("loading");
                 console.error(error);
                 gallery.innerHTML = '<div class="empty">Could not load photos.</div>';
                 showToast(`Could not load photos: ${error.message}`, "error");
                 return false;
             }
 
-            photos = data || [];
+            const records = data || [];
+            const photoAvailability = [];
+            for (let offset = 0; offset < records.length; offset += 8) {
+                const batch = records.slice(offset, offset + 8);
+                photoAvailability.push(...await Promise.all(
+                    batch.map(photo => checkStorageObjectExists(photo.storage_path))
+                ));
+            }
+            document.body.classList.remove("loading");
+            photos = records.map((photo, index) => ({
+                ...photo,
+                storageAvailable: photoAvailability[index]
+            }));
 
             const existingIds = new Set(photos.map(photo => photo.id));
             selectedIds = new Set(
@@ -1352,7 +1390,18 @@
                 return false;
             }
 
-            videos = data || [];
+            const records = data || [];
+            let availability = new Map();
+            try {
+                availability = await checkVideoFileAvailability(records.map(video => video.file_key));
+            } catch (checkError) {
+                console.error("Could not verify B2 video objects:", checkError);
+                showToast("Video files could not be verified. Missing files are marked for cleanup.", "error");
+            }
+            videos = records.map(video => ({
+                ...video,
+                storageAvailable: availability.get(video.file_key)
+            }));
             const existingIds = new Set(videos.map(video => video.id));
             selectedIds = new Set([...selectedIds].filter(id => existingIds.has(id)));
             render();
@@ -1472,6 +1521,28 @@
                 console.warn("Could not verify Storage object:", path, error);
                 return null;
             }
+        }
+
+        async function checkVideoFileAvailability(fileKeys) {
+            const pattern = /^videos\/[0-9a-f-]{36}(?:\.[a-z0-9]{1,10})?$/i;
+            const availability = new Map(fileKeys.map(fileKey => [fileKey, false]));
+            const validKeys = [...new Set(fileKeys.filter(fileKey => typeof fileKey === "string" && pattern.test(fileKey)))];
+
+            for (let offset = 0; offset < validKeys.length; offset += 100) {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/get-upload-url`, {
+                    method: "POST",
+                    headers: {
+                        apikey: SUPABASE_PUBLISHABLE_KEY,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ action: "check", fileKeys: validKeys.slice(offset, offset + 100) })
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.error || `Could not verify videos (${response.status}).`);
+                (result.results || []).forEach(item => availability.set(item.fileKey, item.available));
+            }
+
+            return availability;
         }
 
         async function cleanMissingRecords() {

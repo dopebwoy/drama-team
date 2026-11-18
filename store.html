@@ -537,6 +537,7 @@
         const BUCKET_NAME = "photos";
         const MAX_VIDEO_FILE_SIZE = 5 * 1024 * 1024 * 1024;
         const MAX_FILE_SIZE = 10 * 1024 * 1024;
+        const VIDEO_FILE_KEY_PATTERN = /^videos\/[0-9a-f-]{36}(?:\.[a-z0-9]{1,10})?$/i;
 
         const supabaseClient = window.supabase.createClient(
             SUPABASE_URL,
@@ -828,6 +829,53 @@
             return data;
         }
 
+        async function checkStorageObjectAvailability(storagePath) {
+            try {
+                const response = await fetch(getPublicUrl(storagePath), {
+                    method: "HEAD",
+                    cache: "no-store"
+                });
+                return response.ok;
+            } catch (error) {
+                console.warn("Could not verify photo storage object:", storagePath, error);
+                return null;
+            }
+        }
+
+        async function checkPhotoAvailability(records) {
+            const availability = new Array(records.length);
+            let nextIndex = 0;
+            const worker = async () => {
+                while (nextIndex < records.length) {
+                    const index = nextIndex++;
+                    availability[index] = await checkStorageObjectAvailability(records[index].storage_path);
+                }
+            };
+            await Promise.all(Array.from({ length: Math.min(10, records.length) }, worker));
+            return availability;
+        }
+
+        async function checkVideoFileAvailability(fileKeys) {
+            const availability = new Map(fileKeys.map(fileKey => [fileKey, false]));
+            const validKeys = [...new Set(fileKeys.filter(fileKey => VIDEO_FILE_KEY_PATTERN.test(fileKey)))];
+
+            for (let offset = 0; offset < validKeys.length; offset += 100) {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/get-upload-url`, {
+                    method: "POST",
+                    headers: {
+                        apikey: SUPABASE_PUBLISHABLE_KEY,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ action: "check", fileKeys: validKeys.slice(offset, offset + 100) })
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.error || `Could not verify videos (${response.status}).`);
+                (result.results || []).forEach(item => availability.set(item.fileKey, item.available));
+            }
+
+            return availability;
+        }
+
         async function loadPhotos() {
             container.innerHTML = '<p id="defaults">Loading photos...</p>';
 
@@ -843,7 +891,10 @@
                 return;
             }
 
-            galleryItems = data.map(record => ({
+            const photoAvailability = await checkPhotoAvailability(data);
+            const missingCount = photoAvailability.filter(available => available === false).length;
+            const unknownCount = photoAvailability.filter(available => available === null).length;
+            galleryItems = data.filter((record, index) => photoAvailability[index] === true).map(record => ({
                 ...record,
                 url: getPublicUrl(record.storage_path),
                 thumbnailUrl: getThumbnailUrl(record.storage_path),
@@ -851,6 +902,14 @@
             }));
 
             sortGallery(sortSelect.value);
+            if (!galleryItems.length) {
+                const empty = container.querySelector("#defaults");
+                if (empty) empty.textContent = unknownCount
+                    ? "Photo files could not be verified right now. Reload to try again."
+                    : missingCount
+                        ? "No available photos. Missing files have been hidden."
+                        : "Nothing to show...";
+            }
         }
 
         const imageObserver = "IntersectionObserver" in window
@@ -891,12 +950,17 @@
             });
 
             img.addEventListener("error", () => {
+                if (img.dataset.fallbackAttempted !== "true") {
+                    img.dataset.fallbackAttempted = "true";
+                    img.src = item.url;
+                    return;
+                }
                 img.hidden = true;
                 const placeholder = document.createElement("div");
                 placeholder.className = "image-placeholder";
-                placeholder.textContent = "Thumbnail unavailable. Click to open the original.";
+                placeholder.textContent = "Image unavailable.";
                 frame.prepend(placeholder);
-            }, { once: true });
+            });
 
             const info = document.createElement("div");
             info.className = "file-info";
@@ -965,8 +1029,30 @@
                 return;
             }
 
-            videoItems = data || [];
+            const records = data || [];
+            let availability;
+            try {
+                availability = await checkVideoFileAvailability(records.map(record => record.file_key));
+            } catch (checkError) {
+                console.error("Could not verify B2 video objects:", checkError);
+                renderVideos([]);
+                const empty = videoContainer.querySelector(".gallery-empty");
+                if (empty) empty.textContent = "Video availability could not be checked. Reload to try again.";
+                return;
+            }
+
+            const missingCount = records.filter(record => availability.get(record.file_key) === false).length;
+            const unknownCount = records.filter(record => availability.get(record.file_key) !== true && availability.get(record.file_key) !== false).length;
+            videoItems = records.filter(record => availability.get(record.file_key) === true);
             renderVideos(videoItems);
+            if (!videoItems.length && records.length) {
+                const empty = videoContainer.querySelector(".gallery-empty");
+                if (empty) empty.textContent = unknownCount
+                    ? "Some video files could not be verified. Reload to try again."
+                    : missingCount
+                        ? "No available videos. Missing B2 files have been hidden."
+                        : "No videos yet.";
+            }
         }
 
         async function getPlayableVideoUrl(fileKey) {

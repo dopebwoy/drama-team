@@ -1,4 +1,4 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from "npm:@aws-sdk/client-s3@3.637.0";
+import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "npm:@aws-sdk/client-s3@3.637.0";
 import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner@3.637.0";
 
 const corsHeaders = {
@@ -9,6 +9,7 @@ const corsHeaders = {
 };
 
 const MAX_VIDEO_FILE_SIZE = 5 * 1024 * 1024 * 1024;
+const VIDEO_FILE_KEY_PATTERN = /^videos\/[0-9a-f-]{36}(?:\.[a-z0-9]{1,10})?$/i;
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders });
@@ -49,6 +50,35 @@ Deno.serve(async request => {
       credentials: { accessKeyId, secretAccessKey }
     });
 
+    if (action === "check") {
+      const fileKeys = Array.isArray(body.fileKeys) ? [...new Set(body.fileKeys)] : [];
+      if (fileKeys.length > 100 || fileKeys.some(fileKey => typeof fileKey !== "string" || !VIDEO_FILE_KEY_PATTERN.test(fileKey))) {
+        return jsonResponse({ error: "The video file list is invalid." }, 400);
+      }
+
+      const results = await Promise.all(fileKeys.map(async fileKey => {
+        try {
+          await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: fileKey }));
+          return { fileKey, available: true };
+        } catch (error) {
+          const errorInfo = (error && typeof error === "object" ? error : {}) as {
+            $metadata?: { httpStatusCode?: number };
+            name?: string;
+            Code?: string;
+          };
+          const status = errorInfo.$metadata?.httpStatusCode;
+          const code = errorInfo.name || errorInfo.Code;
+          if (status === 404 || code === "NotFound" || code === "NoSuchKey") {
+            return { fileKey, available: false };
+          }
+          console.error("Could not verify a B2 video object:", error);
+          return { fileKey, available: null };
+        }
+      }));
+
+      return jsonResponse({ results });
+    }
+
     if (action === "upload") {
       const { fileName, fileType, fileSize } = body;
       const title = typeof body.title === "string" ? body.title.trim() : "";
@@ -77,7 +107,7 @@ Deno.serve(async request => {
 
     if (action === "watch") {
       const fileKey = typeof body.fileKey === "string" ? body.fileKey : "";
-      if (!/^videos\/[0-9a-f-]{36}(?:\.[a-z0-9]{1,10})?$/i.test(fileKey)) {
+      if (!VIDEO_FILE_KEY_PATTERN.test(fileKey)) {
         return jsonResponse({ error: "That video key is not valid." }, 400);
       }
 
@@ -89,7 +119,7 @@ Deno.serve(async request => {
       return jsonResponse({ watchUrl });
     }
 
-    return jsonResponse({ error: "Action must be upload or watch." }, 400);
+    return jsonResponse({ error: "Action must be upload, watch, or check." }, 400);
   } catch (error) {
     console.error("Could not prepare the B2 video URL:", error);
     return jsonResponse({ error: "Could not prepare this video request. Please try again." }, 500);

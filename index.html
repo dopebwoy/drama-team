@@ -413,8 +413,6 @@
             text-underline-offset: 3px;
         }
 
-        .meeting-status-section { padding: 0 0 46px; }
-
         .meeting-live-card {
             display: flex;
             align-items: center;
@@ -425,6 +423,7 @@
             border-radius: 20px;
             background: linear-gradient(110deg, rgba(110, 33, 43, 0.34), var(--panel) 68%);
             box-shadow: 0 18px 42px var(--shadow);
+            margin-bottom: 20px;
         }
 
         .meeting-live-copy { display: flex; align-items: flex-start; gap: 14px; }
@@ -475,8 +474,7 @@
                 width: 100%;
             }
 
-            .latest-section,
-            .meeting-status-section { padding-bottom: 34px; }
+            .latest-section { padding-bottom: 34px; }
             .latest-panel { padding: 21px 17px; border-radius: 21px; }
             .latest-header { align-items: flex-start; }
             .latest-card { flex-basis: clamp(155px, 38vw, 190px); }
@@ -539,6 +537,17 @@
 
         <section class="latest-section" aria-labelledby="latestTitle">
             <div class="latest-panel">
+                <div class="meeting-live-card" id="meetingLiveCard" hidden>
+                    <div class="meeting-live-copy">
+                        <span class="meeting-live-dot" aria-hidden="true"></span>
+                        <div>
+                            <h2 class="meeting-live-title">Live video call in progress</h2>
+                            <p class="meeting-live-detail" id="meetingLiveDetail" aria-live="polite"></p>
+                        </div>
+                    </div>
+                    <a class="btn btn-primary meeting-live-join" href="meeting.html">Join live meeting</a>
+                </div>
+
                 <div class="latest-header">
                     <div>
                         <span class="latest-kicker">Fresh from the gallery</span>
@@ -559,19 +568,6 @@
                     <span id="latestHint">Newest first. Swipe left to see older uploads.</span>
                     <a class="latest-view-all" href="store.html">View all uploads</a>
                 </div>
-            </div>
-        </section>
-
-        <section class="meeting-status-section" aria-label="Live meeting status">
-            <div class="meeting-live-card" id="meetingLiveCard" hidden>
-                <div class="meeting-live-copy">
-                    <span class="meeting-live-dot" aria-hidden="true"></span>
-                    <div>
-                        <h2 class="meeting-live-title">Live video call in progress</h2>
-                        <p class="meeting-live-detail" id="meetingLiveDetail" aria-live="polite"></p>
-                    </div>
-                </div>
-                <a class="btn btn-primary meeting-live-join" href="meeting.html">Join live meeting</a>
             </div>
         </section>
     </main>
@@ -612,6 +608,41 @@
             function storageUrl(client, path) {
                 const { data } = client.storage.from("photos").getPublicUrl(path);
                 return data.publicUrl;
+            }
+
+            async function isStorageObjectAvailable(client, path) {
+                try {
+                    const response = await fetch(storageUrl(client, path), {
+                        method: "HEAD",
+                        cache: "no-store"
+                    });
+                    return response.ok;
+                } catch (error) {
+                    console.warn("Could not verify a recent photo:", error);
+                    return false;
+                }
+            }
+
+            async function checkVideoFileAvailability(fileKeys) {
+                const pattern = /^videos\/[0-9a-f-]{36}(?:\.[a-z0-9]{1,10})?$/i;
+                const availability = new Map(fileKeys.map(fileKey => [fileKey, false]));
+                const validKeys = [...new Set(fileKeys.filter(fileKey => typeof fileKey === "string" && pattern.test(fileKey)))];
+
+                for (let offset = 0; offset < validKeys.length; offset += 100) {
+                    const response = await fetch(`${SUPABASE_URL}/functions/v1/get-upload-url`, {
+                        method: "POST",
+                        headers: {
+                            apikey: SUPABASE_PUBLISHABLE_KEY,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ action: "check", fileKeys: validKeys.slice(offset, offset + 100) })
+                    });
+                    const result = await response.json().catch(() => ({}));
+                    if (!response.ok) throw new Error(result.error || `Could not verify recent videos (${response.status}).`);
+                    (result.results || []).forEach(item => availability.set(item.fileKey, item.available));
+                }
+
+                return availability;
             }
 
             function formatUploadDate(value) {
@@ -696,28 +727,44 @@
 
                 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
                 const [photoResult, videoResult] = await Promise.all([
-                    client.from("photos").select("file_name, storage_path, created_at").order("created_at", { ascending: false }).limit(5),
-                    client.from("videos").select("title, thumbnail_path, created_at").order("created_at", { ascending: false }).limit(5)
+                    client.from("photos").select("file_name, storage_path, created_at").order("created_at", { ascending: false }).limit(20),
+                    client.from("videos").select("title, file_key, thumbnail_path, created_at").order("created_at", { ascending: false }).limit(20)
                 ]);
 
                 const uploads = [];
                 if (!photoResult.error) {
-                    (photoResult.data || []).forEach(photo => uploads.push({
-                        kind: "Photo",
-                        title: photo.file_name || "Drama Team photo",
-                        storage_path: photo.storage_path,
-                        created_at: photo.created_at
-                    }));
+                    const photos = photoResult.data || [];
+                    const availability = await Promise.all(
+                        photos.map(photo => isStorageObjectAvailable(client, photo.storage_path))
+                    );
+                    photos.forEach((photo, index) => {
+                        if (!availability[index]) return;
+                        uploads.push({
+                            kind: "Photo",
+                            title: photo.file_name || "Drama Team photo",
+                            storage_path: photo.storage_path,
+                            created_at: photo.created_at
+                        });
+                    });
                 } else {
                     console.warn("Could not load recent photos:", photoResult.error.message);
                 }
                 if (!videoResult.error) {
-                    (videoResult.data || []).forEach(video => uploads.push({
-                        kind: "Video",
-                        title: video.title || "Drama Team video",
-                        thumbnail_path: video.thumbnail_path,
-                        created_at: video.created_at
-                    }));
+                    const videos = videoResult.data || [];
+                    try {
+                        const availability = await checkVideoFileAvailability(videos.map(video => video.file_key));
+                        videos.forEach(video => {
+                            if (availability.get(video.file_key) !== true) return;
+                            uploads.push({
+                                kind: "Video",
+                                title: video.title || "Drama Team video",
+                                thumbnail_path: video.thumbnail_path,
+                                created_at: video.created_at
+                            });
+                        });
+                    } catch (error) {
+                        console.warn("Could not verify recent videos:", error);
+                    }
                 } else {
                     console.warn("Could not load recent videos:", videoResult.error.message);
                 }

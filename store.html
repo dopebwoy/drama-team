@@ -162,6 +162,26 @@
             opacity: .55;
         }
 
+        [hidden] { display: none !important; }
+
+        #media-tabs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button.input-button.media-tab {
+            border: 1px solid #46515d;
+            background: var(--surface-2);
+            color: var(--text);
+        }
+
+        .media-tab[aria-selected="true"] {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #17130d;
+        }
+
         button.input-button {
             border: 0;
             font-weight: 700;
@@ -176,7 +196,17 @@
             cursor: pointer;
         }
 
-        #container {
+        input[type="text"] {
+            width: min(220px, 45vw);
+            background: #0d1117;
+            color: var(--text);
+            border: 1px solid #46515d;
+            border-radius: 8px;
+            padding: 6px 8px;
+            font: inherit;
+        }
+
+        #container, #videoContainer {
             min-height: 400px;
             margin: 0;
             padding: 20px 12px;
@@ -187,6 +217,10 @@
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 18px;
             align-content: start;
+        }
+
+        #videoContainer {
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
         }
 
         #container.large-view {
@@ -272,6 +306,14 @@
             text-align: center;
         }
 
+        .gallery-empty {
+            grid-column: 1 / -1;
+            margin: auto;
+            color: #e1f8f8;
+            font-size: 14px;
+            text-align: center;
+        }
+
         .broken-image {
             display: grid;
             place-items: center;
@@ -292,6 +334,32 @@
             color: #888;
             font: 12px system-ui, sans-serif;
             text-align: center;
+        }
+
+        .video-frame {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            display: block;
+            background: #080a0d;
+        }
+
+        .video-frame video {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        #videoUploadStatus {
+            gap: 8px;
+            min-width: min(320px, 100%);
+        }
+
+        #videoProgress { width: 120px; accent-color: var(--accent); }
+
+        #videoProgressText {
+            color: var(--muted);
+            font-size: 12px;
         }
 
         .modal {
@@ -355,6 +423,7 @@
             header { padding-inline: 10px; }
             #logo { width: 70px; height: 70px; }
             #container { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 12px 8px; }
+            #videoContainer { grid-template-columns: 1fr; gap: 10px; padding: 12px 8px; }
             #container.large-view { grid-template-columns: 1fr; }
             nav { justify-content: center; }
             .modal { padding: 15px; }
@@ -396,12 +465,17 @@
                 <button type="button" class="input-button" id="start-meeting-button" title="Start live meeting for drama team family">Start Meeting</button>
             </div>
 
-            <div class="tool">
+            <div class="tool" id="media-tabs" role="tablist" aria-label="Gallery media">
+                <button type="button" class="input-button media-tab" id="photosTab" role="tab" aria-selected="true" aria-controls="container">Photos</button>
+                <button type="button" class="input-button media-tab" id="videosTab" role="tab" aria-selected="false" aria-controls="videoContainer">Videos</button>
+            </div>
+
+            <div class="tool" id="photoControls">
                 <input type="file" id="input" multiple accept="image/*" hidden>
                 <label for="input" class="input-button" id="uploadLabel" title="upload image to offcial drama team family as umufamiliye">Upload</label>
             </div>
 
-            <div class="tool">
+            <div class="tool" id="sortControl">
                 <label for="sort">Sort</label>
                 <select id="sort">
                     <option value="new">New</option>
@@ -410,8 +484,20 @@
                 </select>
             </div>
 
-            <div class="tool">
-                <label for="view">View</label>
+            <div class="tool" id="videoControls" hidden>
+                <label for="videoTitle">Title</label>
+                <input type="text" id="videoTitle" maxlength="255" placeholder="Video title" aria-label="Video title">
+                <input type="file" id="videoInput" accept="video/*" hidden>
+                <label for="videoInput" class="input-button" id="videoUploadLabel">Upload videos</label>
+            </div>
+
+            <div class="tool" id="videoUploadStatus" role="status" aria-live="polite" hidden>
+                <progress id="videoProgress" max="100" value="0"></progress>
+                <span id="videoProgressText"></span>
+            </div>
+
+            <div class="tool" id="viewControl">
+                <label for="view" id="viewLabel">View</label>
                 <select id="view">
                     <option value="grid">Grid</option>
                     <option value="large">Large</option>
@@ -420,8 +506,11 @@
             </div>
         </div>
 
-        <div id="container" aria-live="polite">
+        <div id="container" role="tabpanel" aria-labelledby="photosTab" aria-live="polite">
             <p id="defaults">Nothing to show...</p>
+        </div>
+        <div id="videoContainer" role="tabpanel" aria-labelledby="videosTab" aria-live="polite" hidden>
+            <p id="videoDefaults" class="gallery-empty">Loading videos...</p>
         </div>
     </main>
 
@@ -441,6 +530,7 @@
         const SUPABASE_URL = "https://fedwjrefdabcbbklaafz.supabase.co";
         const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_wL7XncIhcH0fqjL_Mxo4Lg_U5z_2edi";
         const BUCKET_NAME = "photos";
+        const MAX_VIDEO_FILE_SIZE = 5 * 1024 * 1024 * 1024;
         const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
         const supabaseClient = window.supabase.createClient(
@@ -449,9 +539,22 @@
         );
 
         const input = document.getElementById("input");
+        const videoInput = document.getElementById("videoInput");
+        const videoTitleInput = document.getElementById("videoTitle");
         const uploadLabel = document.getElementById("uploadLabel");
+        const videoUploadLabel = document.getElementById("videoUploadLabel");
+        const videoUploadStatus = document.getElementById("videoUploadStatus");
+        const videoProgress = document.getElementById("videoProgress");
+        const videoProgressText = document.getElementById("videoProgressText");
         const startMeetingButton = document.getElementById("start-meeting-button");
         const container = document.getElementById("container");
+        const videoContainer = document.getElementById("videoContainer");
+        const photosTab = document.getElementById("photosTab");
+        const videosTab = document.getElementById("videosTab");
+        const photoControls = document.getElementById("photoControls");
+        const videoControls = document.getElementById("videoControls");
+        const sortControl = document.getElementById("sortControl");
+        const viewControl = document.getElementById("viewControl");
         const sortSelect = document.getElementById("sort");
         const viewSelect = document.getElementById("view");
         const imageModal = document.getElementById("imageModal");
@@ -463,6 +566,7 @@
         const title = document.getElementById("title");
 
         let galleryItems = [];
+        let videoItems = [];
         let currentStoragePath = "";
         let currentFileName = "";
 
@@ -563,6 +667,21 @@
         function getThumbnailUrl(storagePath) {
             return getPublicUrl(getThumbnailPath(storagePath));
         }
+
+        function switchMedia(mediaType) {
+            const showVideos = mediaType === "videos";
+            photosTab.setAttribute("aria-selected", String(!showVideos));
+            videosTab.setAttribute("aria-selected", String(showVideos));
+            photoControls.hidden = showVideos;
+            videoControls.hidden = !showVideos;
+            sortControl.hidden = showVideos;
+            viewControl.hidden = showVideos;
+            container.hidden = showVideos;
+            videoContainer.hidden = !showVideos;
+        }
+
+        photosTab.addEventListener("click", () => switchMedia("photos"));
+        videosTab.addEventListener("click", () => switchMedia("videos"));
 
         async function createThumbnail(blob) {
             if (!("createImageBitmap" in window)) {
@@ -736,6 +855,195 @@
 
             renderGallery(sorted);
         }
+
+        async function loadVideos() {
+            videoContainer.innerHTML = '<p id="videoDefaults" class="gallery-empty">Loading videos...</p>';
+
+            const { data, error } = await supabaseClient
+                .from("videos")
+                .select("id, title, file_key, created_at")
+                .order("created_at", { ascending: false });
+
+            if (error) {
+                console.error("Could not load videos:", error);
+                renderVideos([]);
+                const empty = videoContainer.querySelector(".gallery-empty");
+                if (empty) empty.textContent = "The video gallery is not ready yet. Apply the videos database setup, then reload this page.";
+                return;
+            }
+
+            videoItems = data || [];
+            renderVideos(videoItems);
+        }
+
+        async function getPlayableVideoUrl(fileKey) {
+            const response = await fetch(`${SUPABASE_URL}/functions/v1/get-upload-url`, {
+                method: "POST",
+                headers: {
+                    apikey: SUPABASE_PUBLISHABLE_KEY,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ action: "watch", fileKey })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.error || `Could not prepare playback (${response.status}).`);
+            return result.watchUrl;
+        }
+
+        function renderVideos(items) {
+            videoContainer.replaceChildren();
+
+            if (!items.length) {
+                const empty = document.createElement("p");
+                empty.className = "gallery-empty";
+                empty.textContent = "No videos yet. Upload a video to add it here.";
+                videoContainer.appendChild(empty);
+                return;
+            }
+
+            items.forEach(item => {
+                const wrapper = document.createElement("div");
+                wrapper.className = "gallery-item video-item";
+
+                const frame = document.createElement("div");
+                frame.className = "video-frame";
+
+                const player = document.createElement("video");
+                player.controls = true;
+                player.playsInline = true;
+                player.title = item.title || "Drama Team video";
+                player.preload = "none";
+                player.addEventListener("error", () => {
+                    showMessage(`Could not play ${item.title || "this video"}. Check that the B2 key has read access and the video format is supported by this browser.`, "error");
+                }, { once: true });
+
+                getPlayableVideoUrl(item.file_key)
+                    .then(url => { player.src = url; })
+                    .catch(error => {
+                        console.error("Could not prepare video playback:", error);
+                        showMessage(`Could not prepare ${item.title || "this video"} for playback.`, "error");
+                    });
+
+                const info = document.createElement("div");
+                info.className = "file-info";
+                const name = document.createElement("div");
+                name.textContent = item.title || "Untitled video";
+                const meta = document.createElement("div");
+                meta.className = "file-meta";
+                meta.textContent = new Date(item.created_at).toLocaleDateString();
+
+                frame.appendChild(player);
+                info.append(name, meta);
+                wrapper.append(frame, info);
+                videoContainer.appendChild(wrapper);
+            });
+        }
+
+        function requestVideoUploadUrl(file, title) {
+            return fetch(`${SUPABASE_URL}/functions/v1/get-upload-url`, {
+                method: "POST",
+                headers: {
+                    apikey: SUPABASE_PUBLISHABLE_KEY,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    action: "upload",
+                    fileName: file.name,
+                    fileType: file.type,
+                    fileSize: file.size,
+                    title
+                })
+            }).then(async response => {
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(result.error || `Could not prepare the upload (${response.status}).`);
+                }
+                return result;
+            });
+        }
+
+        function putVideoFile(url, file, onProgress) {
+            return new Promise((resolve, reject) => {
+                const request = new XMLHttpRequest();
+                request.open("PUT", url);
+                request.setRequestHeader("Content-Type", file.type);
+                request.upload.addEventListener("progress", event => {
+                    if (event.lengthComputable) onProgress(event.loaded, event.total);
+                });
+                request.addEventListener("load", () => {
+                    if (request.status >= 200 && request.status < 300) resolve();
+                    else reject(new Error(`Backblaze upload failed (${request.status}). Check the bucket CORS rule and try again.`));
+                });
+                request.addEventListener("error", () => reject(new Error("Video upload failed. Check your connection and Backblaze bucket CORS settings.")));
+                request.addEventListener("abort", () => reject(new Error("Video upload was cancelled.")));
+                request.send(file);
+            });
+        }
+
+        async function uploadVideo(file, title, index, total) {
+            if (!file.type.startsWith("video/")) {
+                throw new Error(`${file.name} is not a recognized video file.`);
+            }
+            if (file.size > MAX_VIDEO_FILE_SIZE) {
+                throw new Error(`${file.name} is larger than 5 GB.`);
+            }
+
+            videoProgress.value = 0;
+            videoUploadStatus.hidden = false;
+            videoProgressText.textContent = `Preparing ${index}/${total}: ${file.name}`;
+
+            const upload = await requestVideoUploadUrl(file, title);
+            await putVideoFile(upload.uploadUrl, file, (loaded, size) => {
+                videoProgress.value = Math.round((loaded / size) * 100);
+                videoProgressText.textContent = `Uploading ${index}/${total}: ${file.name} (${videoProgress.value}%)`;
+            });
+
+            const { error } = await supabaseClient.from("videos").insert({
+                title: upload.title,
+                file_key: upload.fileKey
+            });
+            if (error) throw new Error(`Video uploaded, but could not save its gallery record: ${error.message}`);
+        }
+
+        videoInput.addEventListener("change", async event => {
+            const files = Array.from(event.target.files || []);
+            if (!files.length) return;
+
+            document.body.style.cursor = "progress";
+            videoInput.disabled = true;
+            videoUploadLabel.classList.add("disabled");
+            videoUploadLabel.textContent = "Uploading...";
+            videoUploadLabel.setAttribute("aria-disabled", "true");
+
+            const failed = [];
+            let uploaded = 0;
+            const selectedTitle = videoTitleInput.value.trim();
+            for (let index = 0; index < files.length; index++) {
+                try {
+                    await uploadVideo(files[index], selectedTitle || files[index].name.replace(/\.[^.]+$/, ""), index + 1, files.length);
+                    uploaded++;
+                } catch (error) {
+                    console.error(error);
+                    failed.push(`${files[index].name}: ${error.message}`);
+                }
+            }
+
+            await loadVideos();
+            document.body.style.cursor = "";
+            videoInput.disabled = false;
+            videoUploadLabel.classList.remove("disabled");
+            videoUploadLabel.removeAttribute("aria-disabled");
+            videoUploadLabel.textContent = "Upload videos";
+            videoInput.value = "";
+            videoTitleInput.value = "";
+            videoUploadStatus.hidden = true;
+
+            if (failed.length) {
+                showMessage(`${uploaded} uploaded; ${failed.length} failed. ${failed.join(" | ")}`, "error");
+            } else {
+                showMessage(`${uploaded} video${uploaded === 1 ? "" : "s"} uploaded.`, "success");
+            }
+        });
 
         function applyView(viewType) {
             container.classList.remove("large-view", "title-view");
@@ -968,6 +1276,7 @@
 
         loadUserStatus();
         loadPhotos();
+        loadVideos();
        
     </script>
 </body>

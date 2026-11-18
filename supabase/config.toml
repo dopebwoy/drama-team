@@ -1,0 +1,2 @@
+[functions.get-upload-url]
+verify_jwt = true

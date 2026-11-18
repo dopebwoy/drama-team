@@ -46,3 +46,7 @@ export function isManagerPasswordValid(candidate) {
   const b = Buffer.from(MANAGER_PASSWORD);
   return a.length === b.length && timingSafeEqual(a, b);
 }
+
+export function isManagerPasswordConfigured() {
+  return Boolean(MANAGER_PASSWORD);
+}

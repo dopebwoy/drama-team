@@ -1352,18 +1352,10 @@
                 return false;
             }
 
-            const records = data || [];
-            const photoAvailability = [];
-            for (let offset = 0; offset < records.length; offset += 8) {
-                const batch = records.slice(offset, offset + 8);
-                photoAvailability.push(...await Promise.all(
-                    batch.map(photo => checkStorageObjectExists(photo.storage_path))
-                ));
-            }
             document.body.classList.remove("loading");
-            photos = records.map((photo, index) => ({
+            photos = (data || []).map(photo => ({
                 ...photo,
-                storageAvailable: photoAvailability[index]
+                storageAvailable: null
             }));
 
             const existingIds = new Set(photos.map(photo => photo.id));
@@ -1373,6 +1365,7 @@
 
             render();
             renderActivityTable();
+            window.setTimeout(() => validatePhotoAvailabilityAfterRender(), 0);
             return true;
         }
 
@@ -1390,21 +1383,14 @@
                 return false;
             }
 
-            const records = data || [];
-            let availability = new Map();
-            try {
-                availability = await checkVideoFileAvailability(records.map(video => video.file_key));
-            } catch (checkError) {
-                console.error("Could not verify B2 video objects:", checkError);
-                showToast("Video files could not be verified. Missing files are marked for cleanup.", "error");
-            }
-            videos = records.map(video => ({
+            videos = (data || []).map(video => ({
                 ...video,
-                storageAvailable: availability.get(video.file_key)
+                storageAvailable: null
             }));
             const existingIds = new Set(videos.map(video => video.id));
             selectedIds = new Set([...selectedIds].filter(id => existingIds.has(id)));
             render();
+            window.setTimeout(() => validateVideoAvailabilityAfterRender(), 0);
             return true;
         }
 
@@ -1510,39 +1496,98 @@
             if (!path) return false;
 
             const url = getPublicUrl(path);
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 10000);
 
             try {
                 const response = await fetch(url, {
                     method: "HEAD",
-                    cache: "no-store"
+                    cache: "no-store",
+                    signal: controller.signal
                 });
-                return response.ok;
+                return response.ok ? true : response.status >= 500 ? null : false;
             } catch (error) {
                 console.warn("Could not verify Storage object:", path, error);
                 return null;
+            } finally {
+                clearTimeout(timeout);
             }
         }
 
-        async function checkVideoFileAvailability(fileKeys) {
-            const pattern = /^videos\/[0-9a-f-]{36}(?:\.[a-z0-9]{1,10})?$/i;
-            const availability = new Map(fileKeys.map(fileKey => [fileKey, false]));
-            const validKeys = [...new Set(fileKeys.filter(fileKey => typeof fileKey === "string" && pattern.test(fileKey)))];
-
-            for (let offset = 0; offset < validKeys.length; offset += 100) {
-                const response = await fetch(`${SUPABASE_URL}/functions/v1/get-upload-url`, {
-                    method: "POST",
-                    headers: {
-                        apikey: SUPABASE_PUBLISHABLE_KEY,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ action: "check", fileKeys: validKeys.slice(offset, offset + 100) })
-                });
-                const result = await response.json().catch(() => ({}));
-                if (!response.ok) throw new Error(result.error || `Could not verify videos (${response.status}).`);
-                (result.results || []).forEach(item => availability.set(item.fileKey, item.available));
+        async function getVideoWatchUrl(fileKey) {
+            const response = await fetch(`${SUPABASE_URL}/functions/v1/get-upload-url`, {
+                method: "POST",
+                headers: {
+                    apikey: SUPABASE_PUBLISHABLE_KEY,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ action: "watch", fileKey })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                if (response.status >= 500) return null;
+                throw new Error(result.error || `Could not check video (${response.status}).`);
             }
+            return result.watchUrl;
+        }
 
-            return availability;
+        async function isSignedVideoAvailable(url) {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 12000);
+            try {
+                const response = await fetch(url, {
+                    headers: { Range: "bytes=0-0" },
+                    cache: "no-store",
+                    signal: controller.signal
+                });
+                try { await response.body?.cancel(); } catch { /* stop after response headers */ }
+                return response.ok ? true : response.status >= 500 ? null : false;
+            } catch {
+                return null;
+            } finally {
+                clearTimeout(timeout);
+            }
+        }
+
+        async function validatePhotoAvailabilityAfterRender() {
+            let nextIndex = 0;
+            let changed = false;
+            const worker = async () => {
+                while (nextIndex < photos.length) {
+                    const photo = photos[nextIndex++];
+                    const available = await checkStorageObjectExists(photo.storage_path);
+                    if (available === null || photo.storageAvailable === available) continue;
+                    photo.storageAvailable = available;
+                    changed = true;
+                }
+            };
+            await Promise.all(Array.from({ length: Math.min(8, photos.length) }, worker));
+            if (changed) {
+                render();
+                renderActivityTable();
+            }
+        }
+
+        async function validateVideoAvailabilityAfterRender() {
+            let nextIndex = 0;
+            let changed = false;
+            const worker = async () => {
+                while (nextIndex < videos.length) {
+                    const video = videos[nextIndex++];
+                    try {
+                        const url = await getVideoWatchUrl(video.file_key);
+                        if (!url) continue;
+                        const available = await isSignedVideoAvailable(url);
+                        if (available === null || video.storageAvailable === available) continue;
+                        video.storageAvailable = available;
+                        changed = true;
+                    } catch (error) {
+                        console.warn("Could not verify manager video:", error);
+                    }
+                }
+            };
+            await Promise.all(Array.from({ length: Math.min(3, videos.length) }, worker));
+            if (changed) render();
         }
 
         async function cleanMissingRecords() {

@@ -610,39 +610,79 @@
                 return data.publicUrl;
             }
 
-            async function isStorageObjectAvailable(client, path) {
+            async function getVideoWatchUrl(fileKey) {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/get-upload-url`, {
+                    method: "POST",
+                    headers: {
+                        apikey: SUPABASE_PUBLISHABLE_KEY,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ action: "watch", fileKey })
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    if (response.status >= 500) return null;
+                    throw new Error(result.error || `Could not check video (${response.status}).`);
+                }
+                return result.watchUrl;
+            }
+
+            async function checkVideoFromBrowser(fileKey) {
+                let url;
                 try {
-                    const response = await fetch(storageUrl(client, path), {
-                        method: "HEAD",
-                        cache: "no-store"
-                    });
-                    return response.ok;
+                    url = await getVideoWatchUrl(fileKey);
                 } catch (error) {
-                    console.warn("Could not verify a recent photo:", error);
-                    return false;
+                    console.warn("Could not check a recent video:", error);
+                    return error instanceof TypeError ? null : false;
+                }
+                if (!url) return null;
+
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 12000);
+                try {
+                    const response = await fetch(url, {
+                        headers: { Range: "bytes=0-0" },
+                        cache: "no-store",
+                        signal: controller.signal
+                    });
+                    try { await response.body?.cancel(); } catch { /* stop after response headers */ }
+                    return response.ok ? true : response.status >= 500 ? null : false;
+                } catch (error) {
+                    console.warn("Could not check a recent video:", error);
+                    return null;
+                } finally {
+                    clearTimeout(timeout);
                 }
             }
 
-            async function checkVideoFileAvailability(fileKeys) {
-                const pattern = /^videos\/[0-9a-f-]{36}(?:\.[a-z0-9]{1,10})?$/i;
-                const availability = new Map(fileKeys.map(fileKey => [fileKey, false]));
-                const validKeys = [...new Set(fileKeys.filter(fileKey => typeof fileKey === "string" && pattern.test(fileKey)))];
+            async function validateLatestCards(client) {
+                const cards = Array.from(rail.querySelectorAll(".latest-card[data-media-kind]"));
+                let nextIndex = 0;
+                const worker = async () => {
+                    while (nextIndex < cards.length) {
+                        const card = cards[nextIndex++];
+                        let available = null;
+                        if (card.dataset.mediaKind === "Photo") {
+                            const controller = new AbortController();
+                            const timeout = setTimeout(() => controller.abort(), 10000);
+                            try {
+                                const response = await fetch(storageUrl(client, card.dataset.storagePath), {
+                                    method: "HEAD",
+                                    cache: "no-store",
+                                    signal: controller.signal
+                                });
+                                available = response.ok ? true : response.status >= 500 ? null : false;
+                            } catch { /* keep the card if the status request itself is unavailable */ }
+                            finally { clearTimeout(timeout); }
+                        } else {
+                            available = await checkVideoFromBrowser(card.dataset.fileKey);
+                        }
+                        if (available === false) card.remove();
+                    }
+                };
 
-                for (let offset = 0; offset < validKeys.length; offset += 100) {
-                    const response = await fetch(`${SUPABASE_URL}/functions/v1/get-upload-url`, {
-                        method: "POST",
-                        headers: {
-                            apikey: SUPABASE_PUBLISHABLE_KEY,
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({ action: "check", fileKeys: validKeys.slice(offset, offset + 100) })
-                    });
-                    const result = await response.json().catch(() => ({}));
-                    if (!response.ok) throw new Error(result.error || `Could not verify recent videos (${response.status}).`);
-                    (result.results || []).forEach(item => availability.set(item.fileKey, item.available));
-                }
-
-                return availability;
+                await Promise.all(Array.from({ length: Math.min(3, cards.length) }, worker));
+                requestAnimationFrame(updateScrollButtons);
             }
 
             function formatUploadDate(value) {
@@ -657,6 +697,9 @@
                 card.href = "store.html";
                 card.setAttribute("role", "listitem");
                 card.setAttribute("aria-label", `${upload.kind}: ${upload.title}`);
+                card.dataset.mediaKind = upload.kind;
+                if (upload.storage_path) card.dataset.storagePath = upload.storage_path;
+                if (upload.file_key) card.dataset.fileKey = upload.file_key;
 
                 const media = document.createElement("div");
                 media.className = "latest-media";
@@ -727,44 +770,29 @@
 
                 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
                 const [photoResult, videoResult] = await Promise.all([
-                    client.from("photos").select("file_name, storage_path, created_at").order("created_at", { ascending: false }).limit(20),
-                    client.from("videos").select("title, file_key, thumbnail_path, created_at").order("created_at", { ascending: false }).limit(20)
+                    client.from("photos").select("file_name, storage_path, created_at").order("created_at", { ascending: false }).limit(5),
+                    client.from("videos").select("title, file_key, thumbnail_path, created_at").order("created_at", { ascending: false }).limit(5)
                 ]);
 
                 const uploads = [];
                 if (!photoResult.error) {
-                    const photos = photoResult.data || [];
-                    const availability = await Promise.all(
-                        photos.map(photo => isStorageObjectAvailable(client, photo.storage_path))
-                    );
-                    photos.forEach((photo, index) => {
-                        if (!availability[index]) return;
-                        uploads.push({
+                    (photoResult.data || []).forEach(photo => uploads.push({
                             kind: "Photo",
                             title: photo.file_name || "Drama Team photo",
                             storage_path: photo.storage_path,
                             created_at: photo.created_at
-                        });
-                    });
+                        }));
                 } else {
                     console.warn("Could not load recent photos:", photoResult.error.message);
                 }
                 if (!videoResult.error) {
-                    const videos = videoResult.data || [];
-                    try {
-                        const availability = await checkVideoFileAvailability(videos.map(video => video.file_key));
-                        videos.forEach(video => {
-                            if (availability.get(video.file_key) !== true) return;
-                            uploads.push({
-                                kind: "Video",
-                                title: video.title || "Drama Team video",
-                                thumbnail_path: video.thumbnail_path,
-                                created_at: video.created_at
-                            });
-                        });
-                    } catch (error) {
-                        console.warn("Could not verify recent videos:", error);
-                    }
+                    (videoResult.data || []).forEach(video => uploads.push({
+                        kind: "Video",
+                        title: video.title || "Drama Team video",
+                        file_key: video.file_key,
+                        thumbnail_path: video.thumbnail_path,
+                        created_at: video.created_at
+                    }));
                 } else {
                     console.warn("Could not load recent videos:", videoResult.error.message);
                 }
@@ -783,6 +811,7 @@
                     rail.appendChild(empty);
                 } else {
                     latest.forEach(upload => rail.appendChild(createUploadCard(client, upload)));
+                    window.setTimeout(() => validateLatestCards(client), 0);
                 }
 
                 requestAnimationFrame(updateScrollButtons);

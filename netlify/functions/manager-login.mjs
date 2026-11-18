@@ -1,4 +1,4 @@
-import { createManagerSession, isManagerPasswordConfigured, isManagerPasswordValid } from '../manager-session.mjs';
+import { createManagerSession, isManagerPasswordValid } from '../manager-session.mjs';
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -11,10 +11,6 @@ export default async function handler(request) {
   let body;
   try { body = await request.json(); }
   catch { return json({ error: 'Request body must be valid JSON.' }, 400); }
-
-  if (!isManagerPasswordConfigured()) {
-    return json({ error: 'Umukomite login is not configured. Set MANAGER_PASSWORD in Netlify and redeploy.' }, 503);
-  }
 
   const name = typeof body?.name === 'string' ? body.name.trim().slice(0, 80) : '';
   if (!name || !isManagerPasswordValid(body?.password)) {

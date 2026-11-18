@@ -270,6 +270,7 @@
         const enableRemindersInput = document.getElementById('enableReminders');
         const loginStatus = document.getElementById('loginStatus');
         const public_passkey = localStorage.getItem('password') || 'drama';
+        const UMUKOMITE_PASSWORD = 'umu7.2026';
         const pushConfigPromise = fetch('/.netlify/functions/push-config')
             .then(async response => ({ ...await response.json(), ok: response.ok }))
             .catch(() => ({ ok: false, error: 'Push notifications are not configured on the website yet.' }));
@@ -465,6 +466,12 @@
                 }
 
                 alert('Incorrect member password.');
+                return;
+            }
+
+            if (password !== UMUKOMITE_PASSWORD) {
+                loginStatus.textContent = 'Incorrect Umukomite name or password.';
+                loginStatus.dataset.kind = 'error';
                 return;
             }
 

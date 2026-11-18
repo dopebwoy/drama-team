@@ -1192,6 +1192,39 @@
             });
         }
 
+        async function createVideoFingerprint(file, onProgress) {
+            const chunkSize = 16 * 1024 * 1024;
+            const chunkCount = Math.ceil(file.size / chunkSize);
+            const chunkDigests = [];
+
+            for (let offset = 0; offset < file.size; offset += chunkSize) {
+                const chunk = await file.slice(offset, Math.min(offset + chunkSize, file.size)).arrayBuffer();
+                chunkDigests.push(new Uint8Array(await crypto.subtle.digest("SHA-256", chunk)));
+                onProgress(chunkDigests.length, chunkCount);
+            }
+
+            const prefix = new TextEncoder().encode(`DTM_VIDEO_FINGERPRINT_V1:${file.size}:`);
+            const fingerprintBytes = new Uint8Array(prefix.length + chunkDigests.length * 32);
+            fingerprintBytes.set(prefix);
+            chunkDigests.forEach((digest, index) => fingerprintBytes.set(digest, prefix.length + index * 32));
+
+            const fingerprint = await crypto.subtle.digest("SHA-256", fingerprintBytes);
+            return Array.from(new Uint8Array(fingerprint))
+                .map(byte => byte.toString(16).padStart(2, "0"))
+                .join("");
+        }
+
+        async function findExistingVideoByHash(fileHash) {
+            const { data, error } = await supabaseClient
+                .from("videos")
+                .select("id, title")
+                .eq("file_hash", fileHash)
+                .maybeSingle();
+
+            if (error) throw new Error(`Video duplicate check failed: ${error.message}`);
+            return data;
+        }
+
         async function uploadVideo(file, title, index, total) {
             if (!file.type.startsWith("video/")) {
                 throw new Error(`${file.name} is not a recognized video file.`);
@@ -1202,8 +1235,18 @@
 
             videoProgress.value = 0;
             videoUploadStatus.hidden = false;
-            videoProgressText.textContent = `Creating preview ${index}/${total}: ${file.name}`;
+            videoProgressText.textContent = `Checking for duplicate ${index}/${total}: ${file.name}`;
 
+            const fileHash = await createVideoFingerprint(file, (completed, chunks) => {
+                videoProgress.value = Math.round((completed / chunks) * 100);
+                videoProgressText.textContent = `Checking ${index}/${total}: ${file.name} (${videoProgress.value}%)`;
+            });
+            if (await findExistingVideoByHash(fileHash)) {
+                return { duplicate: true };
+            }
+
+            videoProgress.value = 0;
+            videoProgressText.textContent = `Creating preview ${index}/${total}: ${file.name}`;
             let thumbnailPath = null;
             try {
                 const thumbnail = await createVideoThumbnail(file);
@@ -1231,6 +1274,7 @@
                 const { error } = await supabaseClient.from("videos").insert({
                     title: upload.title,
                     file_key: upload.fileKey,
+                    file_hash: fileHash,
                     thumbnail_path: thumbnailPath
                 });
                 if (error) throw new Error(`Video uploaded, but could not save its gallery record: ${error.message}`);
@@ -1241,7 +1285,7 @@
                 throw error;
             }
 
-            return Boolean(thumbnailPath);
+            return { duplicate: false, hasPreview: Boolean(thumbnailPath) };
         }
 
         videoInput.addEventListener("change", async event => {
@@ -1256,6 +1300,7 @@
 
             const failed = [];
             let uploaded = 0;
+            let duplicates = 0;
             let previewsMissing = 0;
             const selectedTitle = videoTitleInput.value.trim();
             for (let index = 0; index < files.length; index++) {
@@ -1263,9 +1308,13 @@
                     const title = files.length === 1 && selectedTitle
                         ? selectedTitle
                         : files[index].name.replace(/\.[^.]+$/, "");
-                    const hasPreview = await uploadVideo(files[index], title, index + 1, files.length);
+                    const outcome = await uploadVideo(files[index], title, index + 1, files.length);
+                    if (outcome.duplicate) {
+                        duplicates++;
+                        continue;
+                    }
                     uploaded++;
-                    if (!hasPreview) previewsMissing++;
+                    if (!outcome.hasPreview) previewsMissing++;
                 } catch (error) {
                     console.error(error);
                     failed.push(`${files[index].name}: ${error.message}`);
@@ -1283,12 +1332,18 @@
             videoUploadStatus.hidden = true;
 
             if (failed.length) {
-                showMessage(`${uploaded} uploaded; ${failed.length} failed. ${failed.join(" | ")}`, "error");
+                showMessage(`${uploaded} uploaded; ${duplicates} duplicate${duplicates === 1 ? "" : "s"} skipped; ${failed.length} failed. ${failed.join(" | ")}`, "error");
             } else {
+                const duplicateNote = duplicates
+                    ? ` ${duplicates} duplicate${duplicates === 1 ? " was" : "s were"} skipped.`
+                    : "";
                 const previewNote = previewsMissing
                     ? ` ${previewsMissing} preview${previewsMissing === 1 ? " was" : "s were"} unavailable.`
                     : "";
-                showMessage(`${uploaded} video${uploaded === 1 ? "" : "s"} uploaded.${previewNote}`, "success");
+                const uploadNote = uploaded
+                    ? `${uploaded} video${uploaded === 1 ? "" : "s"} uploaded.`
+                    : "No new videos uploaded.";
+                showMessage(`${uploadNote}${duplicateNote}${previewNote}`, "success");
             }
         });
 

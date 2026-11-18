@@ -4,12 +4,14 @@ create table if not exists public.videos (
   id uuid primary key default gen_random_uuid(),
   title text,
   file_key text,
+  file_hash text,
   thumbnail_path text,
   created_at timestamptz not null default now()
 );
 
 alter table public.videos add column if not exists title text;
 alter table public.videos add column if not exists file_key text;
+alter table public.videos add column if not exists file_hash text;
 alter table public.videos add column if not exists thumbnail_path text;
 
 drop policy if exists "Public can view videos" on public.videos;
@@ -47,6 +49,9 @@ alter table public.videos alter column file_key set not null;
 
 create unique index if not exists videos_file_key_idx
   on public.videos (file_key);
+create unique index if not exists videos_file_hash_idx
+  on public.videos (file_hash)
+  where file_hash is not null;
 create index if not exists videos_created_at_idx
   on public.videos (created_at desc);
 
@@ -64,5 +69,6 @@ create policy "Public can add videos"
   with check (
     length(title) between 1 and 255
     and file_key like 'videos/%'
+    and (file_hash is null or file_hash ~ '^[0-9a-f]{64}$')
     and (thumbnail_path is null or thumbnail_path like 'video-thumbnails/%')
   );

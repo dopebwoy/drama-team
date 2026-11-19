@@ -131,14 +131,21 @@
 
         #tools {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 12px 24px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
             margin-bottom: 15px;
             font: 13px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
                 Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
                 sans-serif;
+        }
+
+        #primaryTools {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            width: 100%;
         }
 
         #media-tabs { display: flex; align-items: center; gap: 8px; }
@@ -147,12 +154,24 @@
             border: 1px solid #46515d;
             background: var(--surface-2);
             color: var(--text);
+            transition: background .2s ease, box-shadow .2s ease, color .2s ease;
         }
 
         .media-tab[aria-selected="true"] {
-            border-color: var(--accent);
-            background: var(--accent);
-            color: #17130d;
+            border-color: #167448;
+            background: #075b35;
+            color: #f3fff7;
+            box-shadow: 0 0 0 2px rgba(196, 255, 215, .45), 0 3px 12px rgba(122, 255, 173, .28);
+        }
+
+        #uploadControl { margin-left: auto; gap: 8px; }
+
+        #secondaryTools {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px 24px;
         }
 
         .tool {
@@ -292,6 +311,85 @@
             padding: 8px;
         }
 
+        .media-group {
+            grid-column: 1 / -1;
+            min-width: 0;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #111820;
+        }
+
+        .media-group-summary {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 16px;
+            color: var(--text);
+            cursor: pointer;
+            list-style: none;
+            font: 700 15px/1.4 system-ui, sans-serif;
+        }
+
+        .media-group-summary::-webkit-details-marker { display: none; }
+        .media-group-summary::marker { content: ""; }
+        .media-group-summary::after {
+            content: "+";
+            margin-left: auto;
+            color: #b7e7c8;
+            font-size: 20px;
+        }
+
+        .media-group[open] > .media-group-summary::after { content: "−"; }
+
+        .media-group-count {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        .media-group-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            align-items: start;
+            gap: 18px;
+            padding: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        #videoContainer .media-group-items {
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        }
+
+        #container.large-view .media-group-items {
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        }
+
+        #container.title-view .media-group-items {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .media-group-more {
+            display: grid;
+            place-content: center;
+            gap: 5px;
+            min-width: 0;
+            min-height: 100px;
+            padding: 12px;
+            border: 1px dashed #687784;
+            border-radius: 10px;
+            background: #1a2630;
+            color: #eaf4ec;
+            font: 700 14px/1.3 system-ui, sans-serif;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .media-group-more:hover { background: #24343e; }
+        .media-group-more-count { color: var(--muted); font-size: 12px; font-weight: 400; }
+        .video-group .media-group-more { aspect-ratio: 16 / 9; }
+
         #container.title-view .image-frame {
             flex: 0 0 90px;
             width: 90px;
@@ -342,6 +440,7 @@
         }
 
         .video-frame {
+            position: relative;
             width: 100%;
             aspect-ratio: 16 / 9;
             display: block;
@@ -353,6 +452,39 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
+        }
+
+        .video-view-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 2;
+            border: 1px solid rgba(255, 255, 255, .45);
+            border-radius: 7px;
+            padding: 5px 9px;
+            background: rgba(13, 17, 23, .85);
+            color: white;
+            cursor: pointer;
+        }
+
+        .video-load-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            z-index: 2;
+            transform: translate(-50%, -50%);
+            border: 1px solid rgba(255, 255, 255, .55);
+            border-radius: 999px;
+            padding: 10px 16px;
+            background: rgba(13, 17, 23, .88);
+            color: white;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .video-load-button:disabled {
+            cursor: wait;
+            opacity: .8;
         }
 
         #videoUploadStatus {
@@ -374,22 +506,75 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 30px;
+            padding: 58px 70px 32px;
             background: rgba(0, 0, 0, .92);
         }
 
         .modal.hidden { display: none; }
 
+        #modalViewer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: min(100%, 1200px);
+            max-height: 100%;
+            touch-action: pan-y;
+        }
+
         #zoomedImage {
             display: block;
             max-width: 95vw;
-            max-height: 90vh;
+            max-height: 82vh;
             width: auto;
             height: auto;
             object-fit: contain;
             border: 1px solid var(--accent);
             border-radius: 20px;
         }
+
+        #zoomedVideo {
+            display: block;
+            width: min(90vw, 1100px);
+            max-height: 82vh;
+            aspect-ratio: 16 / 9;
+            background: #080a0d;
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            object-fit: contain;
+        }
+
+        #mediaCaption {
+            max-width: 90vw;
+            margin: 10px 0 0;
+            color: white;
+            font: 15px/1.4 system-ui, sans-serif;
+            text-align: center;
+            overflow-wrap: anywhere;
+        }
+
+        #uploadTitle.invalid { border-color: #d66; }
+
+        .modal-nav {
+            position: absolute;
+            top: 50%;
+            z-index: 2;
+            display: grid;
+            place-items: center;
+            width: 48px;
+            height: 56px;
+            transform: translateY(-50%);
+            border: 1px solid rgba(255, 255, 255, .35);
+            border-radius: 10px;
+            background: rgba(20, 25, 30, .78);
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        .modal-nav:hover { background: rgba(50, 60, 68, .95); }
+        #previousMedia { left: 16px; }
+        #nextMedia { right: 16px; }
 
         #close {
             position: absolute;
@@ -429,9 +614,24 @@
             #logo { width: 70px; height: 70px; }
             #container { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 12px 8px; }
             #videoContainer { grid-template-columns: 1fr; gap: 10px; padding: 12px 8px; }
+            #videoContainer .media-group-items { grid-template-columns: 1fr; gap: 10px; padding: 10px; }
+            #container .media-group-items { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 10px; }
+            .media-group-more { min-height: 90px; padding: 8px; font-size: 12px; }
             #container.large-view { grid-template-columns: 1fr; }
+            #container.large-view .media-group-items { grid-template-columns: 1fr; }
             nav { justify-content: center; }
-            .modal { padding: 15px; }
+            #primaryTools { gap: 4px; }
+            #media-tabs { gap: 4px; }
+            #media-tabs .input-button { padding: 6px; }
+            #uploadControl { gap: 4px; }
+            #titleInputLabel { display: none; }
+            #uploadTitle { width: min(90px, 26vw); }
+            .modal { padding: 58px 54px 24px; }
+            #zoomedImage { max-width: 100%; max-height: 78vh; }
+            #zoomedVideo { width: min(100%, 90vw); max-height: 78vh; }
+            .modal-nav { width: 40px; height: 48px; font-size: 25px; }
+            #previousMedia { left: 6px; }
+            #nextMedia { right: 6px; }
             #close { top: 10px; right: 15px; font-size: 38px; }
             #downloadImage { top: 14px; right: 62px; padding: 8px 10px; }
             .file-info { font-size: 10px; }
@@ -466,48 +666,47 @@
 
     <main>
         <div id="tools">
-            <div class="tool">
-                <button type="button" class="input-button" id="start-meeting-button" title="Start live meeting for drama team family">Start Meeting</button>
+            <div id="primaryTools">
+                <div class="tool" id="media-tabs" role="tablist" aria-label="Gallery media">
+                    <button type="button" class="input-button media-tab" id="photosTab" role="tab" aria-selected="true" aria-controls="container">Photos</button>
+                    <button type="button" class="input-button media-tab" id="videosTab" role="tab" aria-selected="false" aria-controls="videoContainer">Video</button>
+                </div>
+
+                <div class="tool" id="uploadControl">
+                    <label for="uploadTitle" id="titleInputLabel">Upload title *</label>
+                    <input type="text" id="uploadTitle" maxlength="255" placeholder="Required group title" aria-label="Required upload group title" required>
+                    <input type="file" id="input" accept="image/*,video/*" multiple hidden>
+                    <button type="button" class="input-button" id="uploadLabel" title="Upload photos and videos">Upload</button>
+                </div>
             </div>
 
-            <div class="tool" id="media-tabs" role="tablist" aria-label="Gallery media">
-                <button type="button" class="input-button media-tab" id="photosTab" role="tab" aria-selected="true" aria-controls="container">Photos</button>
-                <button type="button" class="input-button media-tab" id="videosTab" role="tab" aria-selected="false" aria-controls="videoContainer">see Videos</button>
+            <div id="secondaryTools">
+                <div class="tool">
+                    <button type="button" class="input-button" id="start-meeting-button" title="Start live meeting for drama team family">Start Meeting</button>
+                </div>
+
+                <div class="tool" id="sortControl">
+                    <label for="sort">Sort</label>
+                    <select id="sort">
+                        <option value="new">New</option>
+                        <option value="older">Older</option>
+                        <option value="size">Size</option>
+                    </select>
             </div>
 
-            <div class="tool" id="photoControls">
-                <input type="file" id="input" multiple accept="image/*" hidden>
-                <label for="input" class="input-button" id="uploadLabel" title="upload image to offcial drama team family as umufamiliye">Upload Photos</label>
-            </div>
+                <div class="tool" id="videoUploadStatus" role="status" aria-live="polite" hidden>
+                    <progress id="videoProgress" max="100" value="0"></progress>
+                    <span id="videoProgressText"></span>
+                </div>
 
-            <div class="tool" id="sortControl">
-                <label for="sort">Sort</label>
-                <select id="sort">
-                    <option value="new">New</option>
-                    <option value="older">Older</option>
-                    <option value="size">Size</option>
-                </select>
-            </div>
-
-            <div class="tool" id="videoControls" hidden>
-                <label for="videoTitle">Title</label>
-                <input type="text" id="videoTitle" maxlength="255" placeholder="Video title" aria-label="Video title">
-                <input type="file" id="videoInput" accept="video/*" multiple hidden>
-                <label for="videoInput" class="input-button" id="videoUploadLabel">Upload videos</label>
-            </div>
-
-            <div class="tool" id="videoUploadStatus" role="status" aria-live="polite" hidden>
-                <progress id="videoProgress" max="100" value="0"></progress>
-                <span id="videoProgressText"></span>
-            </div>
-
-            <div class="tool" id="viewControl">
-                <label for="view" id="viewLabel">View</label>
-                <select id="view">
-                    <option value="grid">Grid</option>
-                    <option value="large">Large</option>
-                    <option value="title">Small</option>
-                </select>
+                <div class="tool" id="viewControl">
+                    <label for="view" id="viewLabel">View</label>
+                    <select id="view">
+                        <option value="grid">Grid</option>
+                        <option value="large">Large</option>
+                        <option value="title">Small</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -519,10 +718,16 @@
         </div>
     </main>
 
-    <div id="imageModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Image preview">
+    <div id="imageModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Media preview">
         <button type="button" id="downloadImage" title="Download this image">Download</button>
         <button type="button" id="close" aria-label="Close image preview">&times;</button>
-        <img id="zoomedImage" alt="Selected image preview">
+        <button type="button" class="modal-nav" id="previousMedia" aria-label="Previous media">&#10094;</button>
+        <div id="modalViewer">
+            <img id="zoomedImage" alt="Selected image preview">
+            <video id="zoomedVideo" controls playsinline hidden></video>
+            <p id="mediaCaption"></p>
+        </div>
+        <button type="button" class="modal-nav" id="nextMedia" aria-label="Next media">&#10095;</button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -544,10 +749,8 @@
         );
 
         const input = document.getElementById("input");
-        const videoInput = document.getElementById("videoInput");
-        const videoTitleInput = document.getElementById("videoTitle");
+        const uploadTitleInput = document.getElementById("uploadTitle");
         const uploadLabel = document.getElementById("uploadLabel");
-        const videoUploadLabel = document.getElementById("videoUploadLabel");
         const videoUploadStatus = document.getElementById("videoUploadStatus");
         const videoProgress = document.getElementById("videoProgress");
         const videoProgressText = document.getElementById("videoProgressText");
@@ -556,14 +759,17 @@
         const videoContainer = document.getElementById("videoContainer");
         const photosTab = document.getElementById("photosTab");
         const videosTab = document.getElementById("videosTab");
-        const photoControls = document.getElementById("photoControls");
-        const videoControls = document.getElementById("videoControls");
         const sortControl = document.getElementById("sortControl");
         const viewControl = document.getElementById("viewControl");
         const sortSelect = document.getElementById("sort");
         const viewSelect = document.getElementById("view");
         const imageModal = document.getElementById("imageModal");
+        const modalViewer = document.getElementById("modalViewer");
         const zoomedImage = document.getElementById("zoomedImage");
+        const zoomedVideo = document.getElementById("zoomedVideo");
+        const mediaCaption = document.getElementById("mediaCaption");
+        const previousMediaButton = document.getElementById("previousMedia");
+        const nextMediaButton = document.getElementById("nextMedia");
         const downloadImageButton = document.getElementById("downloadImage");
         const closeButton = document.getElementById("close");
         const logoutButton = document.getElementById("logout-button");
@@ -572,6 +778,11 @@
 
         let galleryItems = [];
         let videoItems = [];
+        let displayedGalleryItems = [];
+        let viewerMediaType = "photos";
+        let viewerMediaIndex = 0;
+        let viewerLoadToken = 0;
+        let touchStartX = null;
         const photoAvailabilityCache = new Map();
         const photoChecksInProgress = new Set();
         let currentStoragePath = "";
@@ -606,8 +817,6 @@
             const showVideos = mediaType === "videos";
             photosTab.setAttribute("aria-selected", String(!showVideos));
             videosTab.setAttribute("aria-selected", String(showVideos));
-            photoControls.hidden = showVideos;
-            videoControls.hidden = !showVideos;
             sortControl.hidden = showVideos;
             viewControl.hidden = showVideos;
             container.hidden = showVideos;
@@ -617,6 +826,27 @@
 
         photosTab.addEventListener("click", () => switchMedia("photos"));
         videosTab.addEventListener("click", () => switchMedia("videos"));
+
+        function requireUploadTitle() {
+            const value = uploadTitleInput.value.trim();
+            uploadTitleInput.setCustomValidity(value ? "" : "Enter an upload title to name this group.");
+            uploadTitleInput.classList.toggle("invalid", !value);
+            if (!value) {
+                uploadTitleInput.reportValidity();
+                uploadTitleInput.focus();
+                return "";
+            }
+            return value;
+        }
+
+        uploadTitleInput.addEventListener("input", () => {
+            uploadTitleInput.setCustomValidity("");
+            uploadTitleInput.classList.remove("invalid");
+        });
+
+        uploadLabel.addEventListener("click", () => {
+            if (requireUploadTitle()) input.click();
+        });
 
         if (logoutButton) {
             logoutButton.addEventListener("click", () => {
@@ -670,6 +900,20 @@
                 .replace(/-+/g, "-")
                 .replace(/^-|-$/g, "")
                 .toLowerCase() || "image";
+        }
+
+        function getDisplayTitle(fileName) {
+            return String(fileName || "").replace(/\.[^/.]+$/, "") || "Untitled photo";
+        }
+
+        function fileNameWithTitle(fileName, title) {
+            const extension = String(fileName).match(/(\.[^./\\]+)$/)?.[1] || "";
+            const cleanTitle = String(title || "").trim();
+            if (!cleanTitle) return fileName;
+            const titleWithoutExtension = extension && cleanTitle.toLowerCase().endsWith(extension.toLowerCase())
+                ? cleanTitle.slice(0, -extension.length)
+                : cleanTitle;
+            return `${titleWithoutExtension}${extension}`;
         }
 
         function createStoragePath(file) {
@@ -822,7 +1066,7 @@
         async function findExistingByHash(fileHash) {
             const { data, error } = await supabaseClient
                 .from("photos")
-                .select("id, file_name, storage_path, uploaded_by, created_at, file_hash")
+                .select("id, file_name, group_title, storage_path, uploaded_by, created_at, file_hash")
                 .eq("file_hash", fileHash)
                 .maybeSingle();
 
@@ -869,8 +1113,13 @@
                     if (available) continue;
 
                     galleryItems = galleryItems.filter(item => item.storage_path !== path);
+                    displayedGalleryItems = displayedGalleryItems.filter(item => item.storage_path !== path);
                     for (const matchingCard of container.querySelectorAll(".gallery-item[data-storage-path]")) {
-                        if (matchingCard.dataset.storagePath === path) matchingCard.remove();
+                        if (matchingCard.dataset.storagePath === path) {
+                            const group = matchingCard.closest(".media-group");
+                            matchingCard.remove();
+                            if (group && !group.querySelector(".gallery-item")) group.remove();
+                        }
                     }
                 }
             };
@@ -886,7 +1135,7 @@
 
             const { data, error } = await supabaseClient
                 .from("photos")
-                .select("id, file_name, storage_path, uploaded_by, created_at, file_hash, file_size")
+                .select("id, file_name, group_title, storage_path, uploaded_by, created_at, file_hash, file_size")
                 .order("created_at", { ascending: false });
 
             if (error) {
@@ -919,6 +1168,7 @@
             : null;
 
         function createImageElement(item) {
+            const displayTitle = getDisplayTitle(item.file_name);
             const wrapper = document.createElement("div");
             wrapper.className = "gallery-item";
             wrapper.dataset.storagePath = item.storage_path;
@@ -927,20 +1177,20 @@
             frame.className = "image-frame";
 
             const img = document.createElement("img");
-            img.alt = item.file_name || "Drama Team photo";
+            img.alt = displayTitle;
             img.className = "gallery-image";
             img.loading = "lazy";
             img.decoding = "async";
-            img.title = item.file_name || "";
+            img.title = displayTitle;
             img.dataset.thumbnailUrl = item.thumbnailUrl || getThumbnailUrl(item.storage_path);
             frame.setAttribute("role", "button");
             frame.setAttribute("tabindex", "0");
-            frame.setAttribute("aria-label", `Open ${item.file_name || "photo"} in full size`);
-            frame.addEventListener("click", () => openImage(item.url, item.file_name, item.storage_path));
+            frame.setAttribute("aria-label", `Open ${displayTitle} in full size`);
+            frame.addEventListener("click", () => openMediaViewer("photos", item));
             frame.addEventListener("keydown", event => {
                 if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    openImage(item.url, item.file_name, item.storage_path);
+                    openMediaViewer("photos", item);
                 }
             });
 
@@ -950,8 +1200,11 @@
                     img.src = item.url;
                     return;
                 }
+                const group = wrapper.closest(".media-group");
                 galleryItems = galleryItems.filter(photo => photo.storage_path !== item.storage_path);
+                displayedGalleryItems = displayedGalleryItems.filter(photo => photo.storage_path !== item.storage_path);
                 wrapper.remove();
+                if (group && !group.querySelector(".gallery-item")) group.remove();
                 if (!container.querySelector(".gallery-item") && galleryItems.length === 0) renderGallery([]);
             });
 
@@ -959,7 +1212,7 @@
             info.className = "file-info";
 
             const name = document.createElement("div");
-            name.textContent = item.file_name || "Unnamed image";
+            name.textContent = displayTitle;
 
             const meta = document.createElement("div");
             meta.className = "file-meta";
@@ -976,8 +1229,78 @@
             return wrapper;
         }
 
+        function groupItemsByUploadTitle(items) {
+            const groups = new Map();
+            items.forEach(item => {
+                const title = String(item.group_title || "").trim() || "Untitled uploads";
+                if (!groups.has(title)) groups.set(title, []);
+                groups.get(title).push(item);
+            });
+            return groups;
+        }
+
+        function createMediaGroup(title, countLabel, mediaType) {
+            const group = document.createElement("details");
+            group.className = `media-group ${mediaType}-group`;
+            group.open = true;
+
+            const summary = document.createElement("summary");
+            summary.className = "media-group-summary";
+            const name = document.createElement("span");
+            name.textContent = title;
+            const count = document.createElement("span");
+            count.className = "media-group-count";
+            count.textContent = countLabel;
+            summary.append(name, count);
+
+            const content = document.createElement("div");
+            content.className = "media-group-items";
+            group.append(summary, content);
+            return { group, content };
+        }
+
+        function populateMediaGroup(content, cards) {
+            cards.forEach((card, index) => {
+                if (index >= 5) {
+                    card.classList.add("media-group-extra");
+                    card.hidden = true;
+                }
+                content.appendChild(card);
+            });
+
+            if (cards.length <= 5) return;
+
+            const moreButton = document.createElement("button");
+            moreButton.type = "button";
+            moreButton.className = "media-group-more";
+            moreButton.setAttribute("aria-expanded", "false");
+            const action = document.createElement("span");
+            const count = document.createElement("span");
+            count.className = "media-group-more-count";
+            const remainingCount = cards.length - 5;
+            let expanded = false;
+
+            const updateButton = () => {
+                action.textContent = expanded ? "Show less" : "See more";
+                count.textContent = expanded ? "" : `+${remainingCount} more`;
+                moreButton.setAttribute("aria-expanded", String(expanded));
+            };
+
+            moreButton.addEventListener("click", () => {
+                expanded = !expanded;
+                content.querySelectorAll(".media-group-extra").forEach(card => {
+                    card.hidden = !expanded;
+                });
+                updateButton();
+            });
+            moreButton.append(action, count);
+            updateButton();
+            content.appendChild(moreButton);
+        }
+
         function renderGallery(items) {
             if (imageObserver) imageObserver.disconnect();
+            displayedGalleryItems = [...items];
             container.replaceChildren();
 
             if (items.length === 0) {
@@ -988,7 +1311,15 @@
                 return;
             }
 
-            items.forEach(item => container.appendChild(createImageElement(item)));
+            for (const [groupTitle, groupItems] of groupItemsByUploadTitle(items)) {
+                const mediaGroup = createMediaGroup(
+                    groupTitle,
+                    `${groupItems.length} photo${groupItems.length === 1 ? "" : "s"}`,
+                    "photo"
+                );
+                populateMediaGroup(mediaGroup.content, groupItems.map(createImageElement));
+                container.appendChild(mediaGroup.group);
+            }
             applyView(viewSelect.value);
             window.setTimeout(validatePhotoCardsAfterRender, 0);
         }
@@ -1012,14 +1343,14 @@
 
             const { data, error } = await supabaseClient
                 .from("videos")
-                .select("id, title, file_key, thumbnail_path, created_at")
+                .select("id, title, group_title, file_key, thumbnail_path, created_at")
                 .order("created_at", { ascending: false });
 
             if (error) {
                 console.error("Could not load videos:", error);
                 renderVideos([]);
                 const empty = videoContainer.querySelector(".gallery-empty");
-                if (empty) empty.textContent = "The video gallery is not ready yet. Apply the videos database setup, then reload this page.";
+                if (empty) empty.textContent = "The gallery database setup is not ready yet. Apply supabase/gallery-groups.sql, then reload this page.";
                 return;
             }
 
@@ -1028,73 +1359,50 @@
             renderVideos(videoItems);
         }
 
-        async function getPlayableVideoUrl(fileKey) {
-            const response = await fetch(`${SUPABASE_URL}/functions/v1/get-upload-url`, {
-                method: "POST",
-                headers: {
-                    apikey: SUPABASE_PUBLISHABLE_KEY,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ action: "watch", fileKey })
-            });
-            const result = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(result.error || `Could not prepare playback (${response.status}).`);
-            return result.watchUrl;
-        }
+        const playableVideoUrls = new Map();
+        const pendingVideoUrlRequests = new Map();
 
-        async function checkSignedVideoUrl(url) {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 12000);
-            try {
-                const response = await fetch(url, {
-                    method: "GET",
-                    headers: { Range: "bytes=0-0" },
-                    cache: "no-store",
-                    signal: controller.signal
+        async function getPlayableVideoUrl(fileKey) {
+            const cached = playableVideoUrls.get(fileKey);
+            if (cached && cached.expiresAt > Date.now()) return cached.url;
+            if (pendingVideoUrlRequests.has(fileKey)) return pendingVideoUrlRequests.get(fileKey);
+
+            const request = (async () => {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/get-upload-url`, {
+                    method: "POST",
+                    headers: {
+                        apikey: SUPABASE_PUBLISHABLE_KEY,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ action: "watch", fileKey })
                 });
-                try { await response.body?.cancel(); } catch { /* stop after response headers */ }
-                return response.ok;
-            } catch {
-                return null;
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.error || `Could not prepare playback (${response.status}).`);
+                if (typeof result.watchUrl !== "string" || !result.watchUrl) {
+                    throw new Error("The video playback URL was empty.");
+                }
+                playableVideoUrls.set(fileKey, {
+                    url: result.watchUrl,
+                    expiresAt: Date.now() + (3.5 * 60 * 60 * 1000)
+                });
+                return result.watchUrl;
+            })();
+
+            pendingVideoUrlRequests.set(fileKey, request);
+            try {
+                return await request;
             } finally {
-                clearTimeout(timeout);
+                if (pendingVideoUrlRequests.get(fileKey) === request) {
+                    pendingVideoUrlRequests.delete(fileKey);
+                }
             }
         }
 
         function hideVideoCard(item, wrapper) {
+            const group = wrapper.closest(".media-group");
             wrapper.remove();
             videoItems = videoItems.filter(video => video.id !== item.id);
-        }
-
-        async function validateVideoCardsAfterRender(cards) {
-            let nextIndex = 0;
-            const worker = async () => {
-                while (nextIndex < cards.length) {
-                    const { item, wrapper, player } = cards[nextIndex++];
-                    if (!wrapper.isConnected) continue;
-                    try {
-                        const url = await getPlayableVideoUrl(item.file_key);
-                        const available = await checkSignedVideoUrl(url);
-                        if (!wrapper.isConnected) continue;
-                        if (available === false) {
-                            hideVideoCard(item, wrapper);
-                            continue;
-                        }
-                        player.src = url;
-                    } catch (error) {
-                        console.warn(`Hiding unavailable video ${item.title || item.file_key}:`, error);
-                        hideVideoCard(item, wrapper);
-                    }
-                }
-            };
-
-            await Promise.all(Array.from({ length: Math.min(3, cards.length) }, worker));
-            if (!videoItems.length) {
-                const empty = document.createElement("p");
-                empty.className = "gallery-empty";
-                empty.textContent = "No available videos. Missing files have been hidden.";
-                videoContainer.replaceChildren(empty);
-            }
+            if (group && !group.querySelector(".video-item")) group.remove();
         }
 
         function renderVideos(items) {
@@ -1108,50 +1416,89 @@
                 return;
             }
 
-            const cardsToValidate = [];
-            items.forEach(item => {
-                const wrapper = document.createElement("div");
-                wrapper.className = "gallery-item video-item";
-                wrapper.dataset.videoId = item.id;
+            for (const [groupTitle, groupItems] of groupItemsByUploadTitle(items)) {
+                const mediaGroup = createMediaGroup(
+                    groupTitle,
+                    `${groupItems.length} video${groupItems.length === 1 ? "" : "s"}`,
+                    "video"
+                );
 
-                const frame = document.createElement("div");
-                frame.className = "video-frame";
+                const groupCards = groupItems.map(item => {
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "gallery-item video-item";
+                    wrapper.dataset.videoId = item.id;
 
-                const player = document.createElement("video");
-                player.controls = true;
-                player.playsInline = true;
-                player.title = item.title || "Drama Team video";
-                player.preload = "none";
-                if (item.thumbnail_path) player.poster = getPublicUrl(item.thumbnail_path);
-                player.addEventListener("error", () => {
-                    hideVideoCard(item, wrapper);
-                    if (!videoItems.length) {
-                        const empty = document.createElement("p");
-                        empty.className = "gallery-empty";
-                        empty.textContent = "No available videos. Missing or unsupported files have been hidden.";
-                        videoContainer.replaceChildren(empty);
-                    }
-                }, { once: true });
+                    const frame = document.createElement("div");
+                    frame.className = "video-frame";
 
-                const info = document.createElement("div");
-                info.className = "file-info";
-                const name = document.createElement("div");
-                name.textContent = item.title || "Untitled video";
-                const meta = document.createElement("div");
-                meta.className = "file-meta";
-                meta.textContent = new Date(item.created_at).toLocaleDateString();
+                    const player = document.createElement("video");
+                    player.controls = false;
+                    player.playsInline = true;
+                    player.title = item.title || "Drama Team video";
+                    player.preload = "none";
+                    if (item.thumbnail_path) player.poster = getPublicUrl(item.thumbnail_path);
+                    player.addEventListener("error", () => {
+                        hideVideoCard(item, wrapper);
+                        if (!videoItems.length) {
+                            const empty = document.createElement("p");
+                            empty.className = "gallery-empty";
+                            empty.textContent = "No available videos. Missing or unsupported files have been hidden.";
+                            videoContainer.replaceChildren(empty);
+                        }
+                    }, { once: true });
 
-                frame.appendChild(player);
-                info.append(name, meta);
-                wrapper.append(frame, info);
-                videoContainer.appendChild(wrapper);
-                cardsToValidate.push({ item, wrapper, player });
-            });
+                    const info = document.createElement("div");
+                    info.className = "file-info";
+                    const name = document.createElement("div");
+                    name.textContent = item.title || "Untitled video";
+                    const meta = document.createElement("div");
+                    meta.className = "file-meta";
+                    meta.textContent = new Date(item.created_at).toLocaleDateString();
 
-            window.setTimeout(() => validateVideoCardsAfterRender(cardsToValidate), 0);
+                    const viewButton = document.createElement("button");
+                    viewButton.type = "button";
+                    viewButton.className = "video-view-button";
+                    viewButton.textContent = "Open viewer";
+                    viewButton.setAttribute("aria-label", `Open ${item.title || "video"} in media viewer`);
+                    viewButton.addEventListener("click", () => openMediaViewer("videos", item));
+
+                    const loadButton = document.createElement("button");
+                    loadButton.type = "button";
+                    loadButton.className = "video-load-button";
+                    loadButton.textContent = "Play video";
+                    loadButton.setAttribute("aria-label", `Play ${item.title || "video"}`);
+                    loadButton.addEventListener("click", async () => {
+                        loadButton.disabled = true;
+                        loadButton.textContent = "Loading video…";
+                        try {
+                            const url = await getPlayableVideoUrl(item.file_key);
+                            if (!wrapper.isConnected) return;
+                            player.src = url;
+                            player.controls = true;
+                            player.load();
+                            loadButton.remove();
+                            player.play().catch(() => {});
+                        } catch (error) {
+                            console.error("Could not load video:", error);
+                            loadButton.disabled = false;
+                            loadButton.textContent = "Try again";
+                            showMessage("Could not load this video. Please try again.", "error");
+                        }
+                    });
+
+                    frame.append(player, loadButton, viewButton);
+                    info.append(name, meta);
+                    wrapper.append(frame, info);
+                    return wrapper;
+                });
+
+                populateMediaGroup(mediaGroup.content, groupCards);
+                videoContainer.appendChild(mediaGroup.group);
+            }
+
         }
 
-        function requestVideoUploadUrl(file, title) {
+        function requestVideoUploadUrl(file, title, groupTitle) {
             return fetch(`${SUPABASE_URL}/functions/v1/get-upload-url`, {
                 method: "POST",
                 headers: {
@@ -1163,7 +1510,8 @@
                     fileName: file.name,
                     fileType: file.type,
                     fileSize: file.size,
-                    title
+                    title,
+                    groupTitle
                 })
             }).then(async response => {
                 const result = await response.json().catch(() => ({}));
@@ -1225,7 +1573,7 @@
             return data;
         }
 
-        async function uploadVideo(file, title, index, total) {
+        async function uploadVideo(file, title, groupTitle, index, total) {
             if (!file.type.startsWith("video/")) {
                 throw new Error(`${file.name} is not a recognized video file.`);
             }
@@ -1265,7 +1613,7 @@
             }
 
             try {
-                const upload = await requestVideoUploadUrl(file, title);
+                const upload = await requestVideoUploadUrl(file, title, groupTitle);
                 await putVideoFile(upload.uploadUrl, file, (loaded, size) => {
                     videoProgress.value = Math.round((loaded / size) * 100);
                     videoProgressText.textContent = `Uploading ${index}/${total}: ${file.name} (${videoProgress.value}%)`;
@@ -1273,6 +1621,7 @@
 
                 const { error } = await supabaseClient.from("videos").insert({
                     title: upload.title,
+                    group_title: groupTitle,
                     file_key: upload.fileKey,
                     file_hash: fileHash,
                     thumbnail_path: thumbnailPath
@@ -1288,65 +1637,6 @@
             return { duplicate: false, hasPreview: Boolean(thumbnailPath) };
         }
 
-        videoInput.addEventListener("change", async event => {
-            const files = Array.from(event.target.files || []);
-            if (!files.length) return;
-
-            document.body.style.cursor = "progress";
-            videoInput.disabled = true;
-            videoUploadLabel.classList.add("disabled");
-            videoUploadLabel.textContent = "Uploading...";
-            videoUploadLabel.setAttribute("aria-disabled", "true");
-
-            const failed = [];
-            let uploaded = 0;
-            let duplicates = 0;
-            let previewsMissing = 0;
-            const selectedTitle = videoTitleInput.value.trim();
-            for (let index = 0; index < files.length; index++) {
-                try {
-                    const title = files.length === 1 && selectedTitle
-                        ? selectedTitle
-                        : files[index].name.replace(/\.[^.]+$/, "");
-                    const outcome = await uploadVideo(files[index], title, index + 1, files.length);
-                    if (outcome.duplicate) {
-                        duplicates++;
-                        continue;
-                    }
-                    uploaded++;
-                    if (!outcome.hasPreview) previewsMissing++;
-                } catch (error) {
-                    console.error(error);
-                    failed.push(`${files[index].name}: ${error.message}`);
-                }
-            }
-
-            await loadVideos();
-            document.body.style.cursor = "";
-            videoInput.disabled = false;
-            videoUploadLabel.classList.remove("disabled");
-            videoUploadLabel.removeAttribute("aria-disabled");
-            videoUploadLabel.textContent = "Upload videos";
-            videoInput.value = "";
-            videoTitleInput.value = "";
-            videoUploadStatus.hidden = true;
-
-            if (failed.length) {
-                showMessage(`${uploaded} uploaded; ${duplicates} duplicate${duplicates === 1 ? "" : "s"} skipped; ${failed.length} failed. ${failed.join(" | ")}`, "error");
-            } else {
-                const duplicateNote = duplicates
-                    ? ` ${duplicates} duplicate${duplicates === 1 ? " was" : "s were"} skipped.`
-                    : "";
-                const previewNote = previewsMissing
-                    ? ` ${previewsMissing} preview${previewsMissing === 1 ? " was" : "s were"} unavailable.`
-                    : "";
-                const uploadNote = uploaded
-                    ? `${uploaded} video${uploaded === 1 ? "" : "s"} uploaded.`
-                    : "No new videos uploaded.";
-                showMessage(`${uploadNote}${duplicateNote}${previewNote}`, "success");
-            }
-        });
-
         function applyView(viewType) {
             container.classList.remove("large-view", "title-view");
             if (viewType === "large") container.classList.add("large-view");
@@ -1356,7 +1646,7 @@
         viewSelect.addEventListener("change", event => applyView(event.target.value));
         sortSelect.addEventListener("change", event => sortGallery(event.target.value));
 
-        async function uploadFile(file) {
+        async function uploadFile(file, displayTitle, groupTitle) {
             if (!file.type.startsWith("image/")) {
                 throw new Error(`${file.name} is not an image.`);
             }
@@ -1418,7 +1708,8 @@
             const { data: record, error: databaseError } = await supabaseClient
                 .from("photos")
                 .insert({
-                    file_name: file.name,
+                    file_name: fileNameWithTitle(file.name, displayTitle),
+                    group_title: groupTitle,
                     storage_path: storagePath,
                     uploaded_by: "anonymous",
                     file_hash: fileHash,
@@ -1458,63 +1749,196 @@
             };
         }
 
+        function getUploadKind(file) {
+            if (file.type.startsWith("image/")) return "image";
+            if (file.type.startsWith("video/")) return "video";
+
+            const extension = file.name.split(".").pop().toLowerCase();
+            if (["jpg", "jpeg", "png", "gif", "webp", "avif", "bmp", "heic", "heif"].includes(extension)) return "image";
+            if (["mp4", "m4v", "mov", "webm", "ogv", "ogg", "avi", "mkv", "3gp", "mpeg", "mpg"].includes(extension)) return "video";
+            return "";
+        }
+
+        function normalizeUploadFile(file, kind) {
+            if (file.type.startsWith(`${kind}/`)) return file;
+
+            const extension = file.name.split(".").pop().toLowerCase();
+            const knownTypes = {
+                jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", gif: "image/gif",
+                webp: "image/webp", avif: "image/avif", bmp: "image/bmp", heic: "image/heic", heif: "image/heif",
+                mp4: "video/mp4", m4v: "video/x-m4v", mov: "video/quicktime", webm: "video/webm",
+                ogv: "video/ogg", ogg: "video/ogg", avi: "video/x-msvideo", mkv: "video/x-matroska",
+                "3gp": "video/3gpp", mpeg: "video/mpeg", mpg: "video/mpeg"
+            };
+            const type = knownTypes[extension];
+            return type ? new File([file], file.name, { type }) : file;
+        }
+
         input.addEventListener("change", async event => {
-            const selectedFiles = Array.from(event.target.files);
+            const selectedFiles = Array.from(event.target.files || []);
             if (!selectedFiles.length) return;
 
-            document.body.style.cursor = "progress";
-            uploadLabel.classList.add("disabled");
-            uploadLabel.textContent = "Checking...";
+            const selectedTitle = requireUploadTitle();
+            if (!selectedTitle) {
+                input.value = "";
+                return;
+            }
 
-            let uploaded = 0;
+            const mediaFiles = selectedFiles.map(file => ({ file, kind: getUploadKind(file) }));
+            const videoCount = mediaFiles.filter(item => item.kind === "video").length;
+            let videoIndex = 0;
+            let uploadedPhotos = 0;
+            let uploadedVideos = 0;
             let duplicates = 0;
+            let previewsMissing = 0;
             const failed = [];
 
-            for (const file of selectedFiles) {
-                try {
-                    const result = await uploadFile(file);
+            document.body.style.cursor = "progress";
+            input.disabled = true;
+            uploadTitleInput.disabled = true;
+            uploadLabel.disabled = true;
+            uploadLabel.classList.add("disabled");
+            uploadLabel.textContent = "Uploading...";
+            uploadLabel.setAttribute("aria-disabled", "true");
 
-                    if (result.duplicate) {
-                        duplicates++;
-                    } else {
-                        galleryItems.unshift(result);
-                        uploaded++;
+            for (const { file, kind } of mediaFiles) {
+                if (!kind) {
+                    failed.push(`${file.name}: unsupported file type`);
+                    continue;
+                }
+
+                const uploadFileObject = normalizeUploadFile(file, kind);
+                try {
+                    if (kind === "image") {
+                        const photoTitle = selectedFiles.length === 1 ? selectedTitle : "";
+                        const result = await uploadFile(uploadFileObject, photoTitle, selectedTitle);
+                        if (result.duplicate) {
+                            duplicates++;
+                        } else {
+                            galleryItems.unshift(result);
+                            uploadedPhotos++;
+                        }
+                        continue;
                     }
+
+                    videoIndex++;
+                    videoUploadStatus.hidden = false;
+                    const videoTitle = videoCount === 1 && selectedTitle
+                        ? selectedTitle
+                        : file.name.replace(/\.[^.]+$/, "");
+                    const outcome = await uploadVideo(uploadFileObject, videoTitle, selectedTitle, videoIndex, videoCount);
+                    if (outcome.duplicate) {
+                        duplicates++;
+                        continue;
+                    }
+                    uploadedVideos++;
+                    if (!outcome.hasPreview) previewsMissing++;
                 } catch (error) {
                     console.error(error);
-                    failed.push(error.message);
+                    failed.push(`${file.name}: ${error.message}`);
                 }
             }
 
-            sortGallery(sortSelect.value);
-
-            const parts = [];
-            if (uploaded) parts.push(`${uploaded} uploaded`);
-            if (duplicates) parts.push(`${duplicates} duplicate${duplicates === 1 ? "" : "s"} skipped`);
-
-            if (failed.length) {
-                parts.push(`${failed.length} failed`);
-                showMessage(`${parts.join(" â€¢ ")}: ${failed.join(" | ")}`, "error");
-            } else {
-                showMessage(
-                    parts.length ? parts.join(" â€¢ ") : "Nothing uploaded.",
-                    duplicates && !uploaded ? "success" : "success"
-                );
-            }
+            if (mediaFiles.some(item => item.kind === "image")) sortGallery(sortSelect.value);
+            if (videoCount) await loadVideos();
 
             document.body.style.cursor = "";
+            input.disabled = false;
+            uploadTitleInput.disabled = false;
+            uploadLabel.disabled = false;
             uploadLabel.classList.remove("disabled");
+            uploadLabel.removeAttribute("aria-disabled");
             uploadLabel.textContent = "Upload";
             input.value = "";
+            uploadTitleInput.value = "";
+            uploadTitleInput.setCustomValidity("");
+            uploadTitleInput.classList.remove("invalid");
+            videoUploadStatus.hidden = true;
+
+            const summary = [];
+            if (uploadedPhotos) summary.push(`${uploadedPhotos} photo${uploadedPhotos === 1 ? "" : "s"} uploaded`);
+            if (uploadedVideos) summary.push(`${uploadedVideos} video${uploadedVideos === 1 ? "" : "s"} uploaded`);
+            if (duplicates) summary.push(`${duplicates} duplicate${duplicates === 1 ? "" : "s"} skipped`);
+            if (previewsMissing) summary.push(`${previewsMissing} video preview${previewsMissing === 1 ? "" : "s"} unavailable`);
+
+            if (failed.length) {
+                showMessage(`${summary.join("; ") || "No files uploaded"}; ${failed.length} failed. ${failed.join(" | ")}`, "error");
+            } else {
+                showMessage(summary.length ? `${summary.join("; ")}.` : "Nothing uploaded.", "success");
+            }
         });
 
-        function openImage(url, fileName, storagePath) {
-            zoomedImage.src = url;
-            zoomedImage.alt = fileName || "Selected image";
-            currentStoragePath = storagePath;
-            currentFileName = fileName || "image";
+        function getViewerItems() {
+            return viewerMediaType === "videos" ? videoItems : displayedGalleryItems;
+        }
+
+        function showCurrentMedia() {
+            const items = getViewerItems();
+            if (!items.length) {
+                closeImage();
+                return;
+            }
+
+            viewerMediaIndex = (viewerMediaIndex + items.length) % items.length;
+            const item = items[viewerMediaIndex];
+            const isVideo = viewerMediaType === "videos";
+            const loadToken = ++viewerLoadToken;
+
+            zoomedVideo.pause();
+            zoomedVideo.removeAttribute("src");
+            zoomedVideo.load();
+            zoomedImage.hidden = isVideo;
+            zoomedVideo.hidden = !isVideo;
+            downloadImageButton.hidden = isVideo;
+            previousMediaButton.hidden = items.length < 2;
+            nextMediaButton.hidden = items.length < 2;
+            mediaCaption.textContent = isVideo
+                ? item.title || "Untitled video"
+                : getDisplayTitle(item.file_name);
+
+            if (!isVideo) {
+                currentStoragePath = item.storage_path;
+                currentFileName = item.file_name || "image";
+                zoomedImage.alt = mediaCaption.textContent;
+                zoomedImage.src = item.url;
+                return;
+            }
+
+            currentStoragePath = "";
+            currentFileName = "";
+            getPlayableVideoUrl(item.file_key).then(url => {
+                if (loadToken !== viewerLoadToken || imageModal.classList.contains("hidden")) return;
+                zoomedVideo.src = url;
+                zoomedVideo.title = mediaCaption.textContent;
+                zoomedVideo.load();
+            }).catch(error => {
+                if (loadToken === viewerLoadToken) {
+                    console.error("Could not load video preview:", error);
+                    showMessage("Could not load this video. Please try again.", "error");
+                }
+            });
+        }
+
+        function openMediaViewer(mediaType, item) {
+            viewerMediaType = mediaType;
+            if (mediaType === "videos") {
+                videoContainer.querySelectorAll("video").forEach(player => player.pause());
+            }
+            const items = getViewerItems();
+            viewerMediaIndex = items.findIndex(candidate => mediaType === "videos"
+                ? candidate.id === item.id
+                : candidate.storage_path === item.storage_path);
+            if (viewerMediaIndex < 0) return;
             imageModal.classList.remove("hidden");
             document.body.style.overflow = "hidden";
+            showCurrentMedia();
+        }
+
+        function moveMedia(direction) {
+            const items = getViewerItems();
+            if (items.length < 2) return;
+            viewerMediaIndex = (viewerMediaIndex + direction + items.length) % items.length;
+            showCurrentMedia();
         }
 
         downloadImageButton.addEventListener("click", async () => {
@@ -1554,20 +1978,48 @@
         });
 
         function closeImage() {
+            viewerLoadToken++;
+            zoomedVideo.pause();
+            zoomedVideo.removeAttribute("src");
+            zoomedVideo.load();
             imageModal.classList.add("hidden");
             zoomedImage.removeAttribute("src");
             document.body.style.overflow = "";
         }
 
         closeButton.addEventListener("click", closeImage);
+        previousMediaButton.addEventListener("click", () => moveMedia(-1));
+        nextMediaButton.addEventListener("click", () => moveMedia(1));
+
+        modalViewer.addEventListener("pointerdown", event => {
+            if (event.pointerType === "touch") touchStartX = event.clientX;
+        });
+
+        modalViewer.addEventListener("pointerup", event => {
+            if (touchStartX === null) return;
+            const distance = event.clientX - touchStartX;
+            touchStartX = null;
+            if (Math.abs(distance) >= 55) moveMedia(distance < 0 ? 1 : -1);
+        });
+
+        modalViewer.addEventListener("pointercancel", () => {
+            touchStartX = null;
+        });
 
         imageModal.addEventListener("click", event => {
             if (event.target === imageModal) closeImage();
         });
 
         document.addEventListener("keydown", event => {
-            if (event.key === "Escape" && !imageModal.classList.contains("hidden")) {
+            if (imageModal.classList.contains("hidden")) return;
+            if (event.key === "Escape") {
                 closeImage();
+            } else if (event.key === "ArrowLeft") {
+                event.preventDefault();
+                moveMedia(-1);
+            } else if (event.key === "ArrowRight") {
+                event.preventDefault();
+                moveMedia(1);
             }
         });
 

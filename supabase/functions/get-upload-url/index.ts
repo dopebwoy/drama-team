@@ -52,6 +52,7 @@ Deno.serve(async request => {
     if (action === "upload") {
       const { fileName, fileType, fileSize } = body;
       const title = typeof body.title === "string" ? body.title.trim() : "";
+      const groupTitle = typeof body.groupTitle === "string" ? body.groupTitle.trim() : "";
 
       if (typeof fileName !== "string" || !fileName.trim() || fileName.length > 255) {
         return jsonResponse({ error: "Choose a video with a valid file name." }, 400);
@@ -63,6 +64,9 @@ Deno.serve(async request => {
         return jsonResponse({ error: "Videos must be 5 GB or smaller." }, 400);
       }
       if (title.length > 255) return jsonResponse({ error: "Video titles must be 255 characters or fewer." }, 400);
+      if (groupTitle.length < 1 || groupTitle.length > 255) {
+        return jsonResponse({ error: "Enter an upload group title between 1 and 255 characters." }, 400);
+      }
 
       const extension = fileName.match(/\.([a-z0-9]{1,10})$/i)?.[1].toLowerCase();
       const fileKey = `videos/${crypto.randomUUID()}${extension ? `.${extension}` : ""}`;

@@ -1,8 +1,9 @@
 -- Video bytes stay in a private Backblaze B2 bucket. This table stores the
--- title, B2 key, and optional public preview image path.
+-- item title, required upload group title, B2 key, and optional preview path.
 create table if not exists public.videos (
   id uuid primary key default gen_random_uuid(),
   title text,
+  group_title text,
   file_key text,
   file_hash text,
   thumbnail_path text,
@@ -10,6 +11,7 @@ create table if not exists public.videos (
 );
 
 alter table public.videos add column if not exists title text;
+alter table public.videos add column if not exists group_title text;
 alter table public.videos add column if not exists file_key text;
 alter table public.videos add column if not exists file_hash text;
 alter table public.videos add column if not exists thumbnail_path text;
@@ -36,6 +38,10 @@ begin
 end
 $migrate$;
 
+update public.videos
+set group_title = left(coalesce(nullif(btrim(group_title), ''), nullif(btrim(title), ''), 'Previous uploads'), 255)
+where group_title is null or btrim(group_title) = '';
+
 alter table public.videos
   drop column if exists file_name,
   drop column if exists object_key,
@@ -45,7 +51,13 @@ alter table public.videos
   drop column if exists uploaded_by;
 
 alter table public.videos alter column title set not null;
+alter table public.videos alter column group_title set not null;
 alter table public.videos alter column file_key set not null;
+
+alter table public.videos drop constraint if exists videos_group_title_nonempty;
+alter table public.videos
+  add constraint videos_group_title_nonempty
+  check (char_length(btrim(group_title)) between 1 and 255);
 
 create unique index if not exists videos_file_key_idx
   on public.videos (file_key);
@@ -54,6 +66,8 @@ create unique index if not exists videos_file_hash_idx
   where file_hash is not null;
 create index if not exists videos_created_at_idx
   on public.videos (created_at desc);
+create index if not exists videos_group_title_created_at_idx
+  on public.videos (group_title, created_at desc);
 
 alter table public.videos enable row level security;
 grant select, insert on table public.videos to anon, authenticated;
@@ -68,6 +82,7 @@ create policy "Public can add videos"
   to anon, authenticated
   with check (
     length(title) between 1 and 255
+    and char_length(btrim(group_title)) between 1 and 255
     and file_key like 'videos/%'
     and (file_hash is null or file_hash ~ '^[0-9a-f]{64}$')
     and (thumbnail_path is null or thumbnail_path like 'video-thumbnails/%')

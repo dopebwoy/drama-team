@@ -7,6 +7,8 @@
   },
   "scripts": {
     "dev": "node scripts/dev-server.mjs",
+    "predeploy": "node scripts/check-local-only-files.mjs",
+    "build": "npm run predeploy",
     "test": "node --test",
     "test:livekit": "node scripts/check-livekit.mjs",
     "b2:cors": "node scripts/configure-b2-cors.mjs",

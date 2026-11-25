@@ -9,8 +9,14 @@
     <meta name="apple-mobile-web-app-title" content="Drama Team">
     <link rel="apple-touch-icon" href="/photos/apple-touch-icon.png">
     <script src="/pwa.js" defer></script>
+    <script src="/guard.js" defer></script>
 
-    <title>about Drama team family |ES rugabano </title>
+    <title>About Drama Team Family | ES Rugabano</title>
+    <meta name="description" content="Learn about Drama Team Family, a community from ES Rugabano in Rwanda sharing music, dance, drama, faith and family memories.">
+    <link rel="canonical" href="https://drama-team.netlify.app/about.html">
+    <meta property="og:title" content="About Drama Team Family | ES Rugabano">
+    <meta property="og:description" content="Our story, values and community at ES Rugabano, Rwanda.">
+    <meta property="og:type" content="website">
     <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-M7B25JY4QZ"></script>
 <script>
@@ -61,8 +67,10 @@
 
         .nav-inner {
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
+            gap: 14px;
             padding: 18px 0;
         }
 
@@ -76,8 +84,10 @@
 
         .nav-links {
             display: flex;
+            flex-wrap: wrap;
             gap: 22px;
             align-items: center;
+            justify-content: flex-end;
         }
 
         .nav-links a {
@@ -90,6 +100,25 @@
         .nav-links a:hover {
             color: var(--accent-2);
         }
+
+        .nav-links .whatsapp-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 13px;
+            border: 1px solid rgba(230, 201, 137, 0.48);
+            border-radius: 999px;
+            background: rgba(22, 27, 34, 0.82);
+            color: var(--gold);
+            white-space: nowrap;
+        }
+
+        .nav-links .whatsapp-link:hover {
+            background: rgba(230, 201, 137, 0.14);
+            color: #fff2cf;
+        }
+
+        .nav-links .whatsapp-link[hidden] { display: none; }
 
         .hero {
             padding: 72px 0 40px;
@@ -169,6 +198,88 @@
             margin-top: 12px;
         }
 
+        .section-heading {
+            margin: 0 0 22px;
+        }
+
+        .section-heading h2 {
+            margin: 0;
+            color: var(--gold);
+            font-size: clamp(1.7rem, 3vw, 2.35rem);
+        }
+
+        .section-heading p {
+            max-width: 780px;
+            margin: 12px 0 0;
+            color: var(--muted);
+            line-height: 1.75;
+        }
+
+        .card-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 18px;
+            color: var(--gold);
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .card-link:hover { color: var(--accent-2); }
+
+        .guide-steps {
+            margin: 0;
+            padding-left: 21px;
+            color: var(--muted);
+            line-height: 1.75;
+        }
+
+        .guide-steps li + li { margin-top: 9px; }
+
+        .guide-steps strong { color: var(--text); }
+
+        .guide-steps code {
+            color: #fff2cf;
+            overflow-wrap: anywhere;
+        }
+
+        .about-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            padding: 12px 0 48px;
+        }
+
+        .action-button {
+            display: inline-flex;
+            min-height: 46px;
+            align-items: center;
+            justify-content: center;
+            padding: 11px 18px;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            background: var(--gold);
+            color: #17130d;
+            font: 700 0.98rem Georgia, 'Times New Roman', serif;
+            text-align: center;
+            text-decoration: none;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        }
+
+        .action-button:hover { transform: translateY(-2px); }
+
+        .action-button.secondary {
+            border-color: rgba(230, 201, 137, 0.55);
+            background: rgba(22, 27, 34, 0.92);
+            color: var(--gold);
+        }
+
+        .action-button.secondary:hover {
+            background: rgba(230, 201, 137, 0.12);
+            color: #fff2cf;
+        }
+
         .values {
             list-style: none;
             padding: 0;
@@ -225,6 +336,8 @@
                 <a href="store.html">Gallery</a>
                 <a href="meeting.html">Live meeting</a>
                 <a href="contact.html">Contact</a>
+                <a href="contributions.html">Contributions</a>
+                <a class="whatsapp-link" data-whatsapp-link href="#" hidden>WhatsApp group</a>
             </div>
         </div>
     </nav>
@@ -232,7 +345,7 @@
     <header class="hero">
         <div class="container hero-box">
             <span class="eyebrow">About us</span>
-            <h1>We are the <span class="highlight">Drama Team family</span>, Guardian of the heaven , Blessed parteners.</h1>
+            <h1>We are the <span class="highlight">Drama Team family</span>, guardians of heaven and blessed partners.</h1>
             <p class="lead">Welcome to Drama Team Family! We are a family of young people who love music, dancing, and praising God through gospel songs. We come together to share our talents, support one another, and enjoy art and performances.</p>
             <p class="lead" title="Drama Team Family story"><strong>A short story about our family:</strong> Drama Team Family started in 2018 with a small group of seven girls. The family grew over time. Many members have finished school, but the love, discipline, confidence, public speaking skills, and values they learned remain part of their lives.</p>
             <p class="lead">Each year, new students from different schools can join. This website keeps memories of performances, parties, and other events at ES Rugabano, so members across generations can share, upload, and download photos.</p>
@@ -249,7 +362,7 @@
                     <h3>Our mission</h3>
                     <p>
                         We believe that through gospel music and dance, we can inspire people, spread joy, and bring hope to others.
-                        This platform was created to help our family share memories, pictures, and important moments from our journey together through images shared.
+                        This platform was created to help our family share memories, pictures, and important moments from our journey together through the images we share.
                     </p>
                 </article>
 
@@ -267,10 +380,89 @@
                 </ul>
             </div>
         </section>
+
+        <section aria-labelledby="offers-heading">
+            <div class="section-heading">
+                <span class="eyebrow">Our digital home</span>
+                <h2 id="offers-heading">What Our Digital Home Offers</h2>
+                <p>Stay connected with the Drama Team Family between rehearsals and gatherings. The platform brings our memories, meetings, event support, and leadership contact into one place.</p>
+            </div>
+            <div class="grid">
+                <article class="card">
+                    <h3>Shared memories &amp; gallery</h3>
+                    <p>Keep the story of our rehearsals, performances, and family gatherings alive through photos and videos shared across generations.</p>
+                    <a class="card-link" href="store.html">Visit the gallery <span aria-hidden="true">→</span></a>
+                </article>
+                <article class="card">
+                    <h3>Live family meetings</h3>
+                    <p>Meet online for family conversations using video and audio from a phone or computer, wherever you are.</p>
+                    <a class="card-link" href="meeting.html">Open live meetings <span aria-hidden="true">→</span></a>
+                </article>
+                <article class="card">
+                    <h3>Family event contributions</h3>
+                    <p>Find current event details, confirm the verified treasurer’s payment information, contribute with MTN MoMo, and follow verification in the family record.</p>
+                    <a class="card-link" href="contributions.html">View contributions <span aria-hidden="true">→</span></a>
+                </article>
+                <article class="card">
+                    <h3>Leadership &amp; family connection</h3>
+                    <p>Send Umukomite a message using your name and message, or join the official family WhatsApp group using the button when it is available.</p>
+                    <a class="card-link" href="contact.html">Contact Umukomite <span aria-hidden="true">→</span></a>
+                </article>
+            </div>
+        </section>
+
+        <section aria-labelledby="guide-heading">
+            <div class="section-heading">
+                <span class="eyebrow">A few simple steps</span>
+                <h2 id="guide-heading">How to Use the Platform (Member Guide)</h2>
+                <p>Choose what you want to do below. Each page is designed to make it easy for family members to take part and stay in touch.</p>
+            </div>
+            <div class="grid">
+                <article class="card">
+                    <h3>1. Shared Memories &amp; Gallery (<a href="store.html" style="color:inherit">store.html</a>)</h3>
+                    <ol class="guide-steps">
+                        <li>Open <a href="store.html" style="color:var(--accent-2)">Gallery</a>. If asked to sign in, use your family name and member password.</li>
+                        <li>Choose <strong>Photos</strong> or <strong>Video</strong>, then browse the shared memories by title or date.</li>
+                        <li>To add a rehearsal or gathering memory, choose <strong>Upload</strong>, select your photo or video, and add a clear title before uploading.</li>
+                    </ol>
+                </article>
+                <article class="card">
+                    <h3>2. Live Family Meetings (<a href="meeting.html" style="color:inherit">meeting.html</a>)</h3>
+                    <ol class="guide-steps">
+                        <li>Open <a href="meeting.html" style="color:var(--accent-2)">Live meeting</a> on your phone or computer.</li>
+                        <li>Enter your name and choose <strong>Join meeting</strong> to enter the family room.</li>
+                        <li>Your camera and microphone start off. Turn on audio or video when you are ready to speak with the family.</li>
+                    </ol>
+                </article>
+                <article class="card">
+                    <h3>3. Family Event Contributions (<a href="contributions.html" style="color:inherit">contributions.html</a>)</h3>
+                    <ol class="guide-steps">
+                        <li>Open <a href="contributions.html" style="color:var(--accent-2)">Family Contributions</a> and review the ongoing event and its instructions.</li>
+                        <li>Check the verified treasurer’s photo, full name, and MTN number before paying.</li>
+                        <li>Enter your name, MTN number, and amount. Tap <strong>Open Dialer</strong> to start the MTN MoMo USSD flow, or dial the displayed <code>*182*1*1*...#</code> code yourself.</li>
+                        <li>Complete the payment in MTN MoMo, return to the page, then click <strong>Submit Payment</strong> so Umukomite can verify it.</li>
+                        <li>Join the event discussion by adding your name and comment in the comments section.</li>
+                    </ol>
+                </article>
+                <article class="card">
+                    <h3>4. Contacting Umukomite &amp; WhatsApp Group (<a href="contact.html" style="color:inherit">contact.html</a>)</h3>
+                    <ol class="guide-steps">
+                        <li>Open <a href="contact.html" style="color:var(--accent-2)">Contact Umukomite</a> and enter your name and message to send a note directly to leadership.</li>
+                        <li>To join the official family group, tap the <strong>WhatsApp group</strong> button in the navigation when it appears.</li>
+                    </ol>
+                </article>
+            </div>
+        </section>
+
+        <nav class="about-actions" aria-label="Explore Drama Team Family">
+            <a class="action-button" href="index.html">Home</a>
+            <a class="action-button secondary" href="contributions.html">Family Contributions</a>
+            <a class="action-button secondary" href="contact.html">Contact Umukomite</a>
+        </nav>
     </main>
 
     <footer>
-        © 2026 Drama Team family Es rugabano | blessed partners.
+        © 2026 Drama Team Family, ES Rugabano | Blessed Partners.
     </footer>
 </body>
 </html>

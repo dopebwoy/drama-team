@@ -1,11 +1,13 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-const UMUKOMITE_PASSWORD = 'umu7.2026';
-const SESSION_SECRET = createHmac('sha256', 'Drama Team Family manager session v1').update(UMUKOMITE_PASSWORD).digest('base64url');
+function sessionSecret() {
+  const secret = process.env.MANAGER_SESSION_SECRET?.trim();
+  if (!secret || secret.length < 32) throw new Error('MANAGER_SESSION_SECRET must contain at least 32 characters.');
+  return secret;
+}
 
 function sign(value) {
-  if (!SESSION_SECRET) return '';
-  return createHmac('sha256', SESSION_SECRET).update(value).digest('base64url');
+  return createHmac('sha256', sessionSecret()).update(value).digest('base64url');
 }
 
 function constantTimeEqual(left, right) {
@@ -26,20 +28,18 @@ export function verifyManagerSession(token) {
   if (typeof token !== 'string') return null;
   const [header, payload, signature, extra] = token.split('.');
   if (!header || !payload || !signature || extra !== undefined) return null;
-  const unsigned = `${header}.${payload}`;
-  if (!constantTimeEqual(signature, sign(unsigned))) return null;
   try {
+    if (!constantTimeEqual(signature, sign(`${header}.${payload}`))) return null;
     const claims = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
     if (claims.role !== 'umukomite' || typeof claims.exp !== 'number' || claims.exp <= Math.floor(Date.now() / 1000)) return null;
     return claims;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 export function isManagerPasswordValid(candidate) {
-  if (typeof candidate !== 'string') return false;
+  const expected = process.env.UMUKOMITE_PASSWORD?.trim();
+  if (!expected || typeof candidate !== 'string') return false;
   const a = Buffer.from(candidate);
-  const b = Buffer.from(UMUKOMITE_PASSWORD);
+  const b = Buffer.from(expected);
   return a.length === b.length && timingSafeEqual(a, b);
 }

@@ -16,30 +16,37 @@ test('only Umufamiliye participants can be removed by Umukomite', () => {
   assert.equal(participantRole({ identity: 'manager-older-client' }), 'umukomite');
 });
 
-test('manager sessions are signed, expire, and reject tampering', () => {
+test('manager sessions use configured signing and password secrets', () => {
+  process.env.MANAGER_SESSION_SECRET='m'.repeat(40);
+  process.env.UMUKOMITE_PASSWORD='private-manager-passphrase';
   const token = createManagerSession('Test manager');
   assert.equal(verifyManagerSession(token)?.name, 'Test manager');
   assert.equal(verifyManagerSession(`${token.slice(0, -1)}x`), null);
   assert.equal(verifyManagerSession(createManagerSession('Expired', 0)), null);
-  assert.equal(isManagerPasswordValid('umu7.2026'), true);
+  assert.equal(isManagerPasswordValid('private-manager-passphrase'), true);
   assert.equal(isManagerPasswordValid('incorrect'), false);
 });
 
-test('Umukomite can sign in without manager environment variables', async () => {
+test('Umukomite login requires the configured environment password', async () => {
   const priorPassword = process.env.UMUKOMITE_PASSWORD;
   const priorSecret = process.env.MANAGER_SESSION_SECRET;
+  const priorFetch = globalThis.fetch;
   try {
-    delete process.env.UMUKOMITE_PASSWORD;
-    delete process.env.MANAGER_SESSION_SECRET;
+    process.env.UMUKOMITE_PASSWORD='correct-manager-passphrase';
+    process.env.MANAGER_SESSION_SECRET='s'.repeat(40);
+    globalThis.fetch=async()=>new Response(JSON.stringify([]),{status:200});
     const response = await managerLogin(new Request('http://localhost/.netlify/functions/manager-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Test manager', password: 'umu7.2026' })
+      body: JSON.stringify({ name: 'Test manager', password: 'correct-manager-passphrase' })
     }));
     const body = await response.json();
     assert.equal(response.status, 200);
     assert.equal(verifyManagerSession(body.sessionToken)?.name, 'Test manager');
+    const rejected=await managerLogin(new Request('http://localhost/.netlify/functions/manager-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Test manager',password:'wrong-password'})}));
+    assert.equal(rejected.status,401);
   } finally {
+    globalThis.fetch=priorFetch;
     if (priorPassword === undefined) delete process.env.UMUKOMITE_PASSWORD;
     else process.env.UMUKOMITE_PASSWORD = priorPassword;
     if (priorSecret === undefined) delete process.env.MANAGER_SESSION_SECRET;

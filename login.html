@@ -10,7 +10,8 @@
     <meta name="apple-mobile-web-app-title" content="Drama Team">
     <link rel="apple-touch-icon" href="/photos/apple-touch-icon.png">
     <script src="/pwa.js" defer></script>
-    <title>Login | Dama Team family Es rugabano</title>
+    <script src="/guard.js" defer></script>
+    <title>Login | Drama Team Family, ES Rugabano</title>
     <link rel="icon" type="image/icon" href="./photos/logo.png">
     <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-M7B25JY4QZ"></script>
@@ -223,7 +224,7 @@
         <div class="login-card">
             <div class="top-bar">
                 <div class="brand">DTm</div>
-                <a href="index.html" class="home-link">â† Home</a>
+                <a href="index.html" class="home-link">&larr; Home</a>
             </div>
 
             <h1>Welcome back</h1>
@@ -257,11 +258,13 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
         const SUPABASE_URL = "https://fedwjrefdabcbbklaafz.supabase.co";
         const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_wL7XncIhcH0fqjL_Mxo4Lg_U5z_2edi";
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+        const supabaseClient = window.supabase?.createClient?.(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY) || null;
 
         const roleButtons = document.querySelectorAll('.role-btn');
         const loginForm = document.getElementById('loginForm');
@@ -270,7 +273,6 @@
         const enableRemindersInput = document.getElementById('enableReminders');
         const loginStatus = document.getElementById('loginStatus');
         const public_passkey = localStorage.getItem('password') || 'drama';
-        const UMUKOMITE_PASSWORD = 'umu7.2026';
         const pushConfigPromise = fetch('/.netlify/functions/push-config')
             .then(async response => ({ ...await response.json(), ok: response.ok }))
             .catch(() => ({ ok: false, error: 'Push notifications are not configured on the website yet.' }));
@@ -377,6 +379,7 @@
         }
 
         async function finishLogin(name, role, destination) {
+            sessionStorage.removeItem('dtf_site_access_cache');
             const savedStatus = JSON.parse(localStorage.getItem('status') || '[]');
             const status = Array.isArray(savedStatus) ? savedStatus : [];
             status[0] = 'old';
@@ -390,7 +393,7 @@
             passInput.value = '';
 
             if (enableRemindersInput.checked) {
-                loginStatus.textContent = 'Saving your login and enabling remindersâ€¦';
+                loginStatus.textContent = 'Saving your login and enabling reminders\u2026';
                 loginStatus.dataset.kind = 'success';
                 try {
                     await enableQuarterlyReminders();
@@ -418,6 +421,17 @@
                 role,
                 logged_in_at: new Date().toISOString()
             };
+
+            localStorage.setItem('name', record.name);
+            const deviceId = window.dtfDeviceId || localStorage.getItem('dtf_device_id');
+            if (deviceId) {
+                const deviceResponse = await fetch('/.netlify/functions/site-admin', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:'register-device', deviceId, name:record.name, role }) });
+                if (deviceResponse.ok) {
+                    const device = await deviceResponse.json();
+                    localStorage.setItem('dtf_device_token', device.token);
+                    if (device.blocked) throw new Error('This device is blocked from the website.');
+                }
+            }
 
             try {
                 const { error } = await supabaseClient
@@ -461,7 +475,7 @@
 
             if (selectedRole === 'member') {
                 if (public_passkey && public_passkey === password) {
-                    await finishLogin(name, 'member', 'store.html');
+                    await window.withButtonLoading(loginForm.querySelector('button[type="submit"]'), () => finishLogin(name, 'member', 'store.html'), 'Signing in...');
                     return;
                 }
 
@@ -469,13 +483,7 @@
                 return;
             }
 
-            if (password !== UMUKOMITE_PASSWORD) {
-                loginStatus.textContent = 'Incorrect Umukomite name or password.';
-                loginStatus.dataset.kind = 'error';
-                return;
-            }
-
-            try {
+            await window.withButtonLoading(loginForm.querySelector('button[type="submit"]'), async () => { try {
                 const response = await fetch('/.netlify/functions/manager-login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -488,9 +496,11 @@
             } catch (error) {
                 loginStatus.textContent = error.message;
                 loginStatus.dataset.kind = 'error';
-            }
+            } }, 'Signing in...');
         });
-    </script>
+    
+        });
+</script>
 </body>
 
 </html>

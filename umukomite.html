@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,7 +9,8 @@
     <meta name="apple-mobile-web-app-title" content="Drama Team">
     <link rel="apple-touch-icon" href="/photos/apple-touch-icon.png">
     <script src="/pwa.js" defer></script>
-    <title>umukomite wa drama team family | ES rugabano</title>
+    <script src="/guard.js"></script>
+    <title>Umukomite | Drama Team Family</title>
     <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-M7B25JY4QZ"></script>
 <script>
@@ -61,6 +62,7 @@
             top: 0;
             z-index: 50;
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
             gap: 15px;
@@ -98,8 +100,20 @@
 
         .nav-actions {
             display: flex;
+            flex-wrap: wrap;
             gap: 8px;
             align-items: center;
+            justify-content: flex-end;
+        }
+
+        .nav-actions .nav-action-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: inherit;
+            font: inherit;
+            text-decoration: none;
+            cursor: pointer;
         }
 
         .nav-button,
@@ -591,6 +605,44 @@
         .moderation-empty { grid-column: 1 / -1; margin: 0; padding: 16px; border: 1px dashed var(--border); border-radius: 10px; color: var(--muted); text-align: center; font: 13px/1.5 system-ui, sans-serif; }
         .meeting-remove { flex: 0 0 auto; }
 
+        .contribution-admin {
+            margin: 24px 0; padding: clamp(18px, 3vw, 28px);
+            border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+        }
+        .contribution-admin h2, .contribution-admin h3 { margin: 0 0 14px; color: var(--accent); }
+        .contribution-status { min-height: 1.5em; color: var(--muted); font: 14px/1.5 system-ui, sans-serif; }
+        .contribution-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: end; }
+        .contribution-grid label { display: grid; gap: 7px; color: var(--muted); font: 13px/1.4 system-ui, sans-serif; }
+        .contribution-grid input, .contribution-grid textarea, .contribution-payments input {
+            width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid var(--border); border-radius: 8px;
+            background: #0d1117; color: var(--text); font: 15px system-ui, sans-serif;
+        }
+        .contribution-grid textarea { min-height: 44px; resize: vertical; }
+        .contribution-grid input:focus, .contribution-grid textarea:focus, .contribution-payments input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+        .contribution-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+        .contribution-actions button, .contribution-payments button { min-height: 42px; }
+        .contribution-payments > div { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .contribution-payments p { flex: 1 1 300px; margin: 0; color: var(--text); font: 14px/1.5 system-ui, sans-serif; }
+        .contribution-payments input { width: 150px; }
+        .contribution-financial-summary { margin: 18px 0; padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: #111820; font: 14px/1.6 system-ui, sans-serif; }
+        .contribution-event-overview { display: flex; align-items: center; gap: 16px; min-width: 0; }
+        .contribution-event-copy { min-width: 0; flex: 1 1 auto; }
+        .contribution-event-copy p { margin: 0 0 10px; overflow-wrap: anywhere; }
+        .contribution-treasurer-identity { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .contribution-treasurer-copy { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+        .contribution-avatar { position: relative; display: grid; flex: 0 0 76px; width: 76px; height: 76px; place-items: center; overflow: hidden; border: 2px solid var(--accent); border-radius: 50%; background: var(--surface-3); color: var(--accent); font: 700 1.05rem/1 system-ui, sans-serif; }
+        .contribution-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+        .contribution-avatar img[hidden] { display: none; }
+        .contribution-photo-preview { width: 84px; height: 84px; object-fit: cover; border: 2px solid var(--accent); border-radius: 50%; }
+        .contribution-ledger { width: 100%; border-collapse: collapse; font: 13px/1.45 system-ui, sans-serif; }
+        .contribution-ledger th, .contribution-ledger td { padding: 9px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+        .contribution-ledger th { background: #202a34; color: var(--accent); white-space: nowrap; }
+        .contribution-ledger tfoot { font-weight: 800; color: var(--gold); background: #202a34; }
+        .contribution-ledger-wrap { overflow-x: auto; }
+        .contribution-status[data-kind="success"] { padding: 12px; border: 1px solid #27734e; border-radius: 8px; background: #123b2c; color: #a7f3c5; }
+        .contribution-status[data-kind="error"] { padding: 12px; border: 1px solid #8a4148; border-radius: 8px; background: #401f23; color: #ffc0c0; }
+        @media (max-width: 650px) { .contribution-grid { grid-template-columns: 1fr; } .contribution-actions { align-items: stretch; flex-direction: column; } }
+
         button:disabled {
             cursor: wait;
             opacity: .65;
@@ -643,13 +695,11 @@
         </div>
 
         <div class="nav-actions">
-            <a href="store.html">
-                <button class="secondary-button" type="button">Gallery</button>
-            </a>
+            <a class="secondary-button nav-action-link" href="store.html">Gallery</a>
+            <a class="secondary-button nav-action-link" href="contributions.html">Contributions</a>
+            <a class="secondary-button nav-action-link" href="manager.html">Contact Inbox</a>
             <button class="primary-button" type="button" id="startMeetingButton">Start Meeting</button>
-            <a href="index.html">
-                <button class="danger-button" type="button" id="logoutButton">Log Out</button>
-            </a>
+            <a class="danger-button nav-action-link" href="index.html" id="logoutButton">Log Out</a>
         </div>
     </nav>
 
@@ -660,6 +710,19 @@
                 <p>Manage Drama Team Family photos and videos, remove unwanted media, and keep storage clean.</p>
             </div>
             <div class="hero-badge">UMUKOMITE CONTROL CENTER</div>
+        </section>
+        <section class="panel contribution-admin" id="contributionAdmin">
+            <h2>Family contributions</h2><p id="contributionStatus" role="status" class="contribution-status"></p>
+            <div id="createEventPanel"><form id="eventForm" class="contribution-grid">
+                <label>Event title<input name="title" required maxlength="255"></label><label>Description<textarea name="description" maxlength="3000"></textarea></label>
+                <label>Start date<input name="startDate" type="date" required></label><label>End date<input name="endDate" type="date" required></label>
+                <label>Target amount (FRW)<input name="targetAmount" type="number" min="1" required></label><label>Treasurer name<input name="treasurerName" required maxlength="80"></label>
+                <label>Treasurer MTN number<input name="treasurerPhone" required pattern="07[89][0-9]{7}" placeholder="0781234567"></label>
+                <label>Treasurer Photo (optional)<input name="treasurerPhoto" id="treasurerPhotoInput" type="file" accept="image/*"><small>Choose a clear photo of the person receiving the MTN MoMo funds. It will be resized for mobile.</small><img id="treasurerPhotoPreview" class="contribution-photo-preview" alt="Treasurer photo preview" hidden></label>
+                <label>Treasurer Approval PIN / Password<input name="approvalPin" type="password" required minlength="6" maxlength="128" autocomplete="new-password"><small>Only the treasurer holding the MTN phone should know this PIN. Required to approve/reject payments or delete this event.</small></label>
+                <div class="contribution-actions"><button class="secondary-button" type="button" id="requestPhoneChange">Request Developer to Change Number</button><button class="primary-button" type="submit">Create / activate event</button></div>
+            </form></div>
+            <div id="activeEventPanel" hidden><div id="activeEventDetails" class="contribution-financial-summary"></div><div id="eventFinancialSummary" class="contribution-financial-summary" aria-live="polite"></div><h3>Pending &amp; Rejected Queue</h3><div id="paymentQueue" class="contribution-payments"></div><h3>Official Approved Financial Record</h3><div class="contribution-ledger-wrap"><table class="contribution-ledger"><thead><tr><th>#</th><th>Member Name</th><th>MTN Phone Number</th><th>Approved Amount (FRW)</th><th>Date &amp; Time Approved/Submitted</th></tr></thead><tbody id="approvedLedgerBody"></tbody><tfoot id="approvedLedgerFoot"></tfoot></table></div><button class="danger-button" id="closeEventButton" type="button">Delete / Close Event</button></div>
         </section>
 
         <section class="meeting-monitor" aria-labelledby="meetingMonitorTitle">
@@ -682,23 +745,23 @@
         <section class="stats" aria-label="Gallery statistics">
             <div class="stat">
                 <div class="stat-label">TOTAL PHOTOS</div>
-                <div class="stat-value" id="totalPhotos">â€”</div>
+                <div class="stat-value" id="totalPhotos">&#8212;</div>
             </div>
             <div class="stat">
                 <div class="stat-label">TOTAL VIDEOS</div>
-                <div class="stat-value" id="totalVideos">â€”</div>
+                <div class="stat-value" id="totalVideos">&#8212;</div>
             </div>
             <div class="stat">
                 <div class="stat-label">STORAGE USED</div>
-                <div class="stat-value" id="storageUsed">â€”</div>
+                <div class="stat-value" id="storageUsed">&#8212;</div>
             </div>
             <div class="stat">
                 <div class="stat-label">DUPLICATE RECORDS</div>
-                <div class="stat-value" id="duplicateCount">â€”</div>
+                <div class="stat-value" id="duplicateCount">&#8212;</div>
             </div>
             <div class="stat">
                 <div class="stat-label">MISSING FILES</div>
-                <div class="stat-value" id="missingCount">â€”</div>
+                <div class="stat-value" id="missingCount">&#8212;</div>
             </div>
         </section>
 
@@ -741,7 +804,7 @@
                 <option value="old">Oldest first</option>
                 <option value="large">Largest first</option>
                 <option value="small">Smallest first</option>
-                <option value="name">Name Aâ€“Z</option>
+                <option value="name">Name A&#8211;Z</option>
             </select>
 
             <button id="refreshButton" class="secondary-button" type="button">Refresh</button>
@@ -778,19 +841,32 @@
 
     <div id="toast" class="hidden" role="status"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="/ledger-actions.js"></script>
+    <script defer src="/treasurer-lightbox.js"></script>
 
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
         "use strict";
 
         const SUPABASE_URL = "https://fedwjrefdabcbbklaafz.supabase.co";
         const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_wL7XncIhcH0fqjL_Mxo4Lg_U5z_2edi";
         const BUCKET_NAME = "photos";
 
-        const supabaseClient = window.supabase.createClient(
+        const supabaseClient = window.supabase?.createClient?.(
             SUPABASE_URL,
             SUPABASE_PUBLISHABLE_KEY
-        );
+        ) || null;
+        if (!supabaseClient) {
+            const notice = document.createElement("p");
+            notice.setAttribute("role", "alert");
+            notice.textContent = "The Umukomite dashboard data service is unavailable. Please try again shortly.";
+            notice.style.cssText = "position:fixed;inset:12px 12px auto;z-index:2147483647;padding:14px;border:1px solid #9a7630;border-radius:10px;background:#302713;color:#fff2cf;font:15px/1.45 system-ui,sans-serif";
+            document.querySelectorAll("button,input,select,textarea").forEach(control => { control.disabled = true; });
+            document.body.prepend(notice);
+            return;
+        }
        
         const gallery = document.getElementById("gallery");
         const searchInput = document.getElementById("search");
@@ -841,6 +917,119 @@
         if (!managerSessionToken) {
             window.location.replace("login.html");
         }
+
+        const contributionStatus = document.getElementById('contributionStatus');
+        function contributionNotice(message, kind='success') { contributionStatus.textContent=message; contributionStatus.dataset.kind=kind; contributionStatus.scrollIntoView({behavior:'smooth',block:'center'}); contributionStatus.focus({preventScroll:true}); }
+        const contributionApi = async body => {
+            const response = await fetch('/.netlify/functions/contributions', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...body,sessionToken:managerSessionToken}) });
+            const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Request failed'); return result;
+        };
+        const approvedLedgerWrap = document.querySelector('.contribution-ledger-wrap');
+        const manualPaymentButton = document.createElement('button');
+        manualPaymentButton.type = 'button';
+        manualPaymentButton.className = 'secondary-button ledger-add-button';
+        manualPaymentButton.textContent = '+ Add Manual Payment';
+        manualPaymentButton.hidden = true;
+        approvedLedgerWrap.before(manualPaymentButton);
+        let compressedTreasurerPhoto = '';
+        async function compressTreasurerPhoto(file) {
+            if (!file.type.startsWith('image/')) throw new Error('Choose an image file for the treasurer photo.');
+            const bitmap = await createImageBitmap(file);
+            try {
+                const scale = Math.min(1, 400 / Math.max(bitmap.width, bitmap.height));
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+                canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+                const context = canvas.getContext('2d');
+                context.fillStyle = '#ffffff'; context.fillRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+                let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+                if (!blob) throw new Error('The treasurer photo could not be compressed.');
+                if (blob.size > 512 * 1024) blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.65));
+                if (!blob || blob.size > 512 * 1024) throw new Error('The compressed treasurer photo is too large. Choose another image.');
+                return await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => reject(new Error('The treasurer photo could not be read.'));
+                    reader.readAsDataURL(blob);
+                });
+            } finally { bitmap.close?.(); }
+        }
+        document.getElementById('treasurerPhotoInput').addEventListener('change', async event => {
+            const input = event.currentTarget;
+            const preview = document.getElementById('treasurerPhotoPreview');
+            compressedTreasurerPhoto = '';
+            preview.hidden = true; preview.removeAttribute('src');
+            if (!input.files?.[0]) return;
+            try { compressedTreasurerPhoto = await compressTreasurerPhoto(input.files[0]); preview.src = compressedTreasurerPhoto; preview.hidden = false; }
+            catch (error) { input.value = ''; contributionNotice(error.message, 'error'); }
+        });
+        function makeContributionAvatar(url, name, phone) {
+            const avatar = document.createElement('span'); avatar.className = 'contribution-avatar';
+            const initials = String(name || '?').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(part => Array.from(part)[0]).join('').toUpperCase() || '?';
+            const fallback = document.createElement('span'); fallback.textContent = initials; avatar.append(fallback);
+            const image = document.createElement('img'); image.alt = `Photo of ${name || 'treasurer'}`; image.hidden = true;
+            image.onload = () => { image.hidden = false; window.enableTreasurerPhotoLightbox(avatar, { url, name, phone }); };
+            image.onerror = () => { image.hidden = true; window.disableTreasurerPhotoLightbox(avatar); };
+            if (typeof url === 'string' && /^https:\/\//i.test(url)) image.src = url;
+            avatar.append(image); return avatar;
+        }
+        async function loadContributionAdmin() {
+            try {
+                const data = await contributionApi({action:'list-admin'});
+                const active = data.activeEvent || data.events.find(event => event.active);
+                document.getElementById('createEventPanel').hidden = Boolean(active);
+                document.getElementById('activeEventPanel').hidden = !active;
+                manualPaymentButton.hidden = !active;
+                const form = document.getElementById('eventForm');
+                const phoneInput = form.querySelector('[name="treasurerPhone"]');
+                const requestButton = document.getElementById('requestPhoneChange');
+                if (active) { form.dataset.eventId = active.id; phoneInput.readOnly = true; requestButton.disabled = false; for (const [field,key] of Object.entries({title:'title',description:'description',startDate:'start_date',endDate:'end_date',targetAmount:'target_amount',treasurerName:'treasurer_name',treasurerPhone:'treasurer_phone'})) form.elements[field].value = active[key] ?? ''; }
+                else { delete form.dataset.eventId; phoneInput.readOnly = false; phoneInput.value = ''; requestButton.disabled = true; }
+                const activeDetails = document.getElementById('activeEventDetails'); activeDetails.replaceChildren();
+                if (active) {
+                    const overview = document.createElement('div'); overview.className = 'contribution-event-overview';
+                    const copy = document.createElement('div'); copy.className = 'contribution-event-copy';
+                    const detail = document.createElement('p'); detail.textContent = `${active.title} · ${active.description || 'No description'} · ${active.start_date} to ${active.end_date} · Target ${Number(active.target_amount).toLocaleString()} FRW.`;
+                    const treasurer = document.createElement('div'); treasurer.className = 'contribution-treasurer-identity';
+                    const treasurerCopy = document.createElement('div'); treasurerCopy.className = 'contribution-treasurer-copy';
+                    const name = document.createElement('strong'); name.textContent = active.treasurer_name || 'Treasurer';
+                    const phone = document.createElement('span'); phone.textContent = `Locked MTN number: ${active.treasurer_phone || ''}`;
+                    treasurerCopy.append(name, phone); treasurer.append(makeContributionAvatar(active.treasurer_photo_url, active.treasurer_name, active.treasurer_phone), treasurerCopy);
+                    copy.append(detail, treasurer); overview.append(copy); activeDetails.append(overview);
+                }
+                const summary=document.getElementById('eventFinancialSummary');
+                summary.textContent=active ? `Where the money is: ${active.treasurer_name} · MTN ${active.treasurer_phone}. Approved collected: ${Number(data.summary.approvedTotal).toLocaleString()} FRW · Pending: ${Number(data.summary.pendingTotal).toLocaleString()} FRW · Target: ${Number(data.summary.targetAmount).toLocaleString()} FRW · Remaining: ${Number(data.summary.remaining).toLocaleString()} FRW.` : 'No active event. Create an event to begin the ledger.';
+                const rows = document.getElementById('paymentQueue'); rows.replaceChildren();
+                const approvedBody=document.getElementById('approvedLedgerBody');approvedBody.replaceChildren();
+                const approved=data.payments.filter(payment=>payment.status==='approved');
+                const queue=data.payments.filter(payment=>payment.status==='pending'||payment.status==='rejected');
+                for (const payment of queue) {
+                    const row=document.createElement('div');
+                    const text=document.createElement('p'); text.textContent=`${payment.member_name} · ${payment.phone} · Claimed ${Number(payment.claimed_amount).toLocaleString()} FRW · Approved ${payment.verified_amount ? Number(payment.verified_amount).toLocaleString() : '—'} FRW · ${new Date(payment.created_at).toLocaleString()} · ${payment.status}`; row.append(text);
+                    if(payment.status==='pending'){
+                        const amount=document.createElement('input');amount.type='number';amount.min='1';amount.value=payment.claimed_amount;amount.setAttribute('aria-label','Verified amount in FRW');
+                        const approve=document.createElement('button');approve.type='button';approve.className='primary-button';approve.textContent='Approve';approve.onclick=async()=>{const approvalPin=prompt('Enter the Event Treasurer Approval PIN:');if(approvalPin===null)return;await window.withButtonLoading(approve,async()=>{try{const result=await contributionApi({action:'approve-payment',paymentId:payment.id,verifiedAmount:Number(amount.value),approvalPin});contributionNotice(`Payment from ${result.memberName} approved and added to the ledger!`);await loadContributionAdmin()}catch(error){contributionNotice(error.message,'error')}},'Approving...')};
+                        const reject=document.createElement('button');reject.type='button';reject.className='danger-button';reject.textContent='Reject';reject.onclick=async()=>{const approvalPin=prompt('Enter the Event Treasurer Approval PIN:');if(approvalPin===null)return;await window.withButtonLoading(reject,async()=>{try{const result=await contributionApi({action:'reject-payment',paymentId:payment.id,approvalPin});contributionNotice(`Payment from ${result.memberName} rejected.`);await loadContributionAdmin()}catch(error){contributionNotice(error.message,'error')}},'Rejecting...')};row.append(amount,approve,reject);
+                    } rows.append(row);
+                }
+                if(!queue.length) rows.textContent='No pending or rejected payments.';
+                approved.forEach((payment,index)=>{const tr=document.createElement('tr');tr.dataset.paymentId=payment.id;tr.dataset.memberName=payment.member_name;for(const value of [index+1,payment.member_name,payment.phone,Number(payment.verified_amount||0).toLocaleString(),new Date(payment.created_at).toLocaleString()]){const td=document.createElement('td');td.textContent=value;tr.append(td)}approvedBody.append(tr)});
+                const foot=document.getElementById('approvedLedgerFoot');foot.replaceChildren();const totalRow=document.createElement('tr');const totalLabel=document.createElement('td');totalLabel.colSpan=3;totalLabel.textContent='Total Approved Collected (FRW)';const total=document.createElement('td');total.textContent=Number(data.summary.approvedTotal).toLocaleString();const details=document.createElement('td');details.textContent=`Target: ${Number(data.summary.targetAmount).toLocaleString()} FRW · Remaining: ${Number(data.summary.remaining).toLocaleString()} FRW`;totalRow.append(totalLabel,total,details);foot.append(totalRow);
+            } catch(error) { contributionStatus.textContent=error.message; }
+        }
+        document.getElementById('eventForm').addEventListener('submit',async event=>{event.preventDefault();const form=event.currentTarget;const data=Object.fromEntries(new FormData(form));const {treasurerPhoto,...eventData}=data;await window.withButtonLoading(form.querySelector('button[type="submit"]'),async()=>{try{const photoData=compressedTreasurerPhoto||(treasurerPhoto instanceof File&&treasurerPhoto.size?await compressTreasurerPhoto(treasurerPhoto):'');await contributionApi({action:'save-event',...eventData,targetAmount:Number(data.targetAmount),...(photoData?{treasurerPhotoData:photoData}:{})});form.reset();compressedTreasurerPhoto='';document.getElementById('treasurerPhotoPreview').hidden=true;contributionNotice(`Event '${data.title}' created and activated! Treasurer MTN number is now locked.`);await loadContributionAdmin()}catch(error){contributionNotice(error.message,'error')}},'Creating event...')});
+        document.getElementById('closeEventButton').addEventListener('click',async(event)=>{const button=event.currentTarget;const active=document.getElementById('eventForm').dataset.eventId;if(!active)return;if(!confirm('Close this active event? This preserves its payment ledger but removes it from public view.'))return;const approvalPin=prompt('Enter the Event Treasurer Approval PIN to close this event:');if(approvalPin===null)return;await window.withButtonLoading(button,async()=>{try{await contributionApi({action:'close-event',approvalPin});contributionNotice('Event closed and deleted. You can now create a new event.');await loadContributionAdmin()}catch(error){contributionNotice(error.message,'error')}},'Closing event...')});
+        document.getElementById('requestPhoneChange').addEventListener('click',async(event)=>{const button=event.currentTarget;const reason=prompt('Why does the treasurer number need to change?');if(!reason)return;await window.withButtonLoading(button,async()=>{try{await contributionApi({action:'request-phone-change',eventId:document.getElementById('eventForm').dataset.eventId,reason});contributionStatus.textContent='Change request sent to the developer.'}catch(error){contributionStatus.textContent=error.message}},'Sending request...')});
+        window.installLedgerActions({
+            wrapper: approvedLedgerWrap,
+            addButton: manualPaymentButton,
+            addPayment: values => contributionApi({action:'manual_add_payment',...values}),
+            removePayment: values => contributionApi({action:'delete_payment',...values}),
+            refresh: loadContributionAdmin,
+            notify: contributionNotice
+        });
+        loadContributionAdmin();
 
         const MEETING_URL = "meeting.html";
 
@@ -894,7 +1083,7 @@
                     removeButton.className = "danger-button meeting-remove";
                     removeButton.textContent = "Remove";
                     removeButton.setAttribute("aria-label", `Remove ${participant.name || "participant"} from the meeting`);
-                    removeButton.addEventListener("click", () => removeMeetingParticipant(participant));
+                    removeButton.addEventListener("click", () => window.withButtonLoading(removeButton, () => removeMeetingParticipant(participant), "Removing..."));
                     row.append(removeButton);
                 }
                 meetingParticipants.append(row);
@@ -947,7 +1136,7 @@
             }
         }
 
-        refreshMeetingButton.addEventListener("click", refreshMeetingParticipants);
+        refreshMeetingButton.addEventListener("click", () => window.withButtonLoading(refreshMeetingButton, refreshMeetingParticipants, "Loading..."));
         if (managerSessionToken) {
             refreshMeetingParticipants();
             window.setInterval(() => {
@@ -967,7 +1156,7 @@
         }
 
         function formatBytes(bytes) {
-            if (!Number.isFinite(Number(bytes)) || Number(bytes) <= 0) return "â€”";
+            if (!Number.isFinite(Number(bytes)) || Number(bytes) <= 0) return "\u2014";
             const units = ["B", "KB", "MB", "GB"];
             let value = Number(bytes);
             let index = 0;
@@ -981,9 +1170,9 @@
         }
 
         function formatDate(value) {
-            if (!value) return "â€”";
+            if (!value) return "\u2014";
             const date = new Date(value);
-            if (Number.isNaN(date.getTime())) return "â€”";
+            if (Number.isNaN(date.getTime())) return "\u2014";
             return date.toLocaleString();
         }
 
@@ -1005,25 +1194,8 @@
         }
 
         async function loadLoginLogsFromSupabase() {
-            try {
-                const { data, error } = await supabaseClient
-                    .from("login_activity")
-                    .select("name, role, logged_in_at")
-                    .order("logged_in_at", { ascending: false })
-                    .limit(100);
-
-                if (!error && Array.isArray(data)) {
-                    localStorage.setItem("dtm_login_log", JSON.stringify(data));
-                    return data;
-                }
-
-                if (error) {
-                    console.warn("Supabase login query failed:", error.message);
-                }
-            } catch (error) {
-                console.warn("Could not query login_activity:", error);
-            }
-
+            // The login_activity table is not part of the current Supabase schema.
+            // Use the browser activity cache until a supported server endpoint exists.
             return readLoginLogs();
         }
 
@@ -1049,7 +1221,7 @@
                     <td>${index + 1}</td>
                     <td>${String(log.name || "Unknown").trim() || "Unknown"}</td>
                     <td>${String(log.role || "member").trim() || "member"}</td>
-                    <td>${log.logged_in_at ? formatDate(log.logged_in_at) : "â€”"}</td>
+                    <td>${log.logged_in_at ? formatDate(log.logged_in_at) : "\u2014"}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -1208,8 +1380,8 @@
             const meta = document.createElement("div");
             meta.className = "photo-meta";
             meta.textContent =
-                `${formatBytes(photo.file_size)} â€¢ ${formatDate(photo.created_at)}` +
-                (photo.uploaded_by ? ` â€¢ ${photo.uploaded_by}` : "");
+                `${formatBytes(photo.file_size)} \u2022 ${formatDate(photo.created_at)}` +
+                (photo.uploaded_by ? ` \u2022 ${photo.uploaded_by}` : "");
 
             const actions = document.createElement("div");
             actions.className = "photo-actions";
@@ -1438,10 +1610,7 @@
         async function deleteCurrentMedia(ids, mediaType = pendingDeleteType) {
             if (!ids.length) return;
 
-            confirmDelete.disabled = true;
-            confirmDelete.textContent = "Deleting...";
-
-            try {
+            await window.withButtonLoading(confirmDelete, async () => { try {
                 const result = await deleteMediaOnServer(mediaType, ids);
                 const deletedIds = Array.isArray(result.deletedIds) ? result.deletedIds : [];
                 const failed = Array.isArray(result.failed) ? result.failed : [];
@@ -1486,10 +1655,7 @@
             } catch (error) {
                 console.error(error);
                 showToast(error.message || "Delete failed.", "error");
-            } finally {
-                confirmDelete.disabled = false;
-                confirmDelete.textContent = "Delete permanently";
-            }
+            } }, 'Deleting...');
         }
 
         async function checkStorageObjectExists(path) {
@@ -1798,8 +1964,8 @@
         videosTab.addEventListener("click", () => setActiveMediaType("video"));
         searchInput.addEventListener("input", render);
         sortSelect.addEventListener("change", render);
-        refreshButton.addEventListener("click", loadCurrentMedia);
-        cleanupButton.addEventListener("click", cleanMissingRecords);
+        refreshButton.addEventListener("click", () => window.withButtonLoading(refreshButton, loadCurrentMedia, "Loading..."));
+        cleanupButton.addEventListener("click", () => window.withButtonLoading(cleanupButton, cleanMissingRecords, "Cleaning..."));
         uploadButton.addEventListener("click", () => fileInput.click());
         fileInput.addEventListener("change", async event => {
             const files = Array.from(event.target.files || []);
@@ -1826,6 +1992,8 @@
         }
 
         init();
-    </script>
+    
+        });
+</script>
 </body>
 </html>

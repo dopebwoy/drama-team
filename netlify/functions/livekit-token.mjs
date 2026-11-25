@@ -53,6 +53,18 @@ export default async function handler(request) {
   }
 
   const requestedRole = body?.role === 'umukomite' ? 'umukomite' : 'umufamiliye';
+  const deviceId = typeof body?.deviceId === 'string' ? body.deviceId : '';
+  const deviceToken = typeof body?.deviceToken === 'string' ? body.deviceToken : '';
+  if (!/^[0-9a-f-]{36}$/i.test(deviceId) || !deviceToken) return json({ error: 'This device is not registered. Refresh and try again.' }, 401);
+  let deviceState;
+  try {
+    const admin = (await import('./site-admin.mjs')).default;
+    const check = await admin(new Request('http://localhost/.netlify/functions/site-admin', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:'device-state', deviceId, deviceToken }) }));
+    deviceState = await check.json();
+    if (!check.ok) return json({ error: deviceState.error || 'Device access denied.' }, check.status);
+  } catch { return json({ error: 'Could not verify device access.' }, 503); }
+  if (deviceState.paused || deviceState.blocked) return json({ error: deviceState.paused ? 'Website temporarily paused.' : 'This device is blocked.' }, 403);
+  if (deviceState.bannedFromMeet) return json({ error: 'This device is permanently banned from live meetings.' }, 403);
   let managerSession = null;
   if (requestedRole === 'umukomite') {
     try { managerSession = verifyManagerSession(body?.managerSessionToken); }

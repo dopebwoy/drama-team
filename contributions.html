@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Family Contributions | Drama Team Family</title><meta name="description" content="Contribute to Drama Team Family gatherings in Rwanda using MTN MoMo and follow verified contributions."><meta property="og:title" content="Family Contributions | Drama Team Family"><meta property="og:description" content="Support Drama Team Family gatherings and follow verified contributions."><meta property="og:type" content="website"><link rel="canonical" href="https://drama-team.netlify.app/contributions.html"><link rel="icon" href="/photos/logo.png"><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0d1117"><script src="/pwa.js" defer></script><script src="/guard.js" defer></script>
+<style>:root{--bg:#0d1117;--panel:#161b22;--gold:#e6c989;--text:#f3efe7;--muted:#b9c2ca;--line:#303943;--accent:#6ee7d8}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at top right,#18302c,var(--bg) 40rem);color:var(--text);font:16px Georgia,serif}header,main{width:min(1000px,92%);margin:auto}header{padding:20px 0;display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;border-bottom:1px solid var(--line)}a{color:var(--gold)}nav{display:flex;gap:15px;flex-wrap:wrap}.button,button{display:inline-block;border:0;border-radius:8px;background:var(--gold);color:#17130d;font:700 1rem inherit;padding:12px 16px;cursor:pointer;text-decoration:none}.secondary-button{background:#27313b;color:var(--text);border:1px solid #46515d}.card{background:#161b22ed;border:1px solid var(--line);border-radius:16px;padding:clamp(18px,4vw,28px);margin:22px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}label{display:grid;gap:6px;margin:12px 0}input,textarea{width:100%;padding:11px;border-radius:7px;border:1px solid #46515d;background:#0d1117;color:var(--text);font:inherit}progress{width:100%;height:20px;accent-color:var(--accent)}.muted{color:var(--muted)}.status{min-height:1.5em;padding:10px 12px;border-radius:8px}.status[data-kind="success"]{background:#123b2c;color:#a7f3c5;border:1px solid #27734e}.status[data-kind="error"]{background:#401f23;color:#ffc0c0;border:1px solid #8a4148}.dial-fallback{margin:12px 0;padding:14px;border:1px solid #9a7630;border-radius:10px;background:#302713;color:#fff2cf}.dial-fallback code{display:block;margin:10px 0;overflow-wrap:anywhere}.list{padding-left:20px}button:disabled{opacity:.55;cursor:not-allowed}@media(max-width:500px){header{display:block}nav{margin-top:10px}}</style><style>.treasurer-identity{display:flex;align-items:center;gap:14px;margin-top:16px;min-width:0}.treasurer-identity-copy{display:grid;gap:5px;min-width:0;overflow-wrap:anywhere}.treasurer-identity-copy strong{color:var(--gold)}.treasurer-avatar{position:relative;display:grid;flex:0 0 76px;width:76px;height:76px;place-items:center;overflow:hidden;border:2px solid var(--gold);border-radius:50%;background:#27313b;color:var(--gold);font:700 1.15rem/1 system-ui,sans-serif}.treasurer-avatar img{position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;object-fit:cover}.treasurer-avatar img[hidden]{display:none}</style></head>
+<body><header><strong>Drama Team Family</strong><nav><a href="index.html">Home</a><a href="about.html">About</a><a href="store.html">Gallery</a><a href="contact.html">Contact</a><a data-whatsapp-link href="#" hidden>WhatsApp group</a></nav></header><main><h1>Family Contributions</h1><p class="muted">Support our family gatherings, such as Gusangira muri Famille. Contributions are counted after treasurer verification.</p><section id="event" class="card" aria-live="polite"><h2>Loading active event...</h2></section><div class="grid"><section class="card"><h2>Contribute with MTN MoMo</h2><p id="treasurerNumber"></p><form id="paymentForm"><label>Full name<input name="name" required maxlength="80"></label><label>MTN phone number<input name="phone" required inputmode="tel" pattern="07[89][0-9]{7}" placeholder="0781234567"></label><label>Contribution amount (FRW)<input name="amount" type="number" min="1" max="100000000" required></label><button class="primary-button" type="button" id="pay">Open Dialer</button><button class="secondary-button" type="submit">Submit Payment</button><div id="dialFallback" class="dial-fallback" hidden role="alert"><strong>Your device cannot open the phone dialer automatically.</strong><p id="dialInstructions"></p><code id="dialCode"></code><button class="secondary-button" id="copyDialCode" type="button">Copy dial code</button></div></form><p id="paymentStatus" class="status" role="status" tabindex="-1"></p></section></div><section class="card"><h2>Event discussion</h2><form id="commentForm"><label>Your name<input name="name" required maxlength="80"></label><label>Comment<textarea name="comment" required maxlength="1000"></textarea></label><button>Post comment</button></form><p id="commentStatus" class="status" role="status" tabindex="-1"></p><ul id="comments" class="list"></ul></section></main>
+<script src="/treasurer-lightbox.js"></script>
+<script>
+document.querySelector('#event h2')?.insertAdjacentHTML('afterbegin','<span class="dtf-button-spinner" aria-hidden="true"></span> ');
+let currentEvent = null;
+let treasurer = '';
+const api = body => fetch('/.netlify/functions/contributions', {
+  method: 'POST', headers: { 'Content-Type': 'application/json', ...(window.dtfDeviceId?{'x-dtf-device-id':window.dtfDeviceId}:{}), ...(window.dtfDeviceToken?.()?{'x-dtf-device-token':window.dtfDeviceToken()}: {}) }, body: JSON.stringify(body)
+});
+function esc(value) { const node = document.createElement('span'); node.textContent = value ?? ''; return node.innerHTML; }
+function treasurerIdentity(event) {
+  const identity = document.createElement('div'); identity.className = 'treasurer-identity';
+  const avatar = document.createElement('span'); avatar.className = 'treasurer-avatar';
+  const name = String(event.treasurer_name || 'Treasurer');
+  const initials = name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(part => Array.from(part)[0]).join('').toUpperCase() || '?';
+  const fallback = document.createElement('span'); fallback.textContent = initials; avatar.append(fallback);
+  const image = document.createElement('img'); image.alt = `Photo of ${name}`; image.hidden = true;
+  image.onload = () => { image.hidden = false; window.enableTreasurerPhotoLightbox(avatar, { url: event.treasurer_photo_url, name, phone: event.treasurer_phone }); };
+  image.onerror = () => { image.hidden = true; window.disableTreasurerPhotoLightbox(avatar); };
+  if (typeof event.treasurer_photo_url === 'string' && /^https:\/\//i.test(event.treasurer_photo_url)) image.src = event.treasurer_photo_url;
+  avatar.append(image);
+  const copy = document.createElement('span'); copy.className = 'treasurer-identity-copy';
+  const treasurerName = document.createElement('strong'); treasurerName.textContent = `Treasurer: ${name}`;
+  const phone = document.createElement('span'); phone.textContent = `Locked MTN number: ${event.treasurer_phone || ''}`;
+  copy.append(treasurerName, phone); identity.append(avatar, copy);
+  return identity;
+}
+async function load() {
+  const box = document.getElementById('event');
+  try {
+    const response = await fetch('/.netlify/functions/contributions');
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Could not load contributions.');
+    currentEvent = data.event || null;
+    treasurer = currentEvent?.treasurer_phone || '';
+    const paymentForm = document.getElementById('paymentForm');
+    const commentForm = document.getElementById('commentForm');
+    for (const button of paymentForm.querySelectorAll('button')) button.disabled = !currentEvent;
+    commentForm.querySelector('button[type="submit"],button:not([type])').disabled = !currentEvent;
+    if (!currentEvent) {
+      box.textContent = 'There is no active contribution event right now. Payments and comments will be available when the Umukomite activates an event.';
+      document.getElementById('treasurerNumber').textContent = '';
+      return;
+    }
+    const eventTitle = document.createElement('h2'); eventTitle.textContent = currentEvent.title || '';
+    const eventDescription = document.createElement('p'); eventDescription.textContent = currentEvent.description || '';
+    const eventDates = document.createElement('p'); eventDates.textContent = `${currentEvent.start_date || ''} – ${currentEvent.end_date || ''}`;
+    box.replaceChildren(eventTitle, eventDescription, eventDates, treasurerIdentity(currentEvent));
+    document.getElementById('treasurerNumber').textContent = `Send to treasurer MTN number ${treasurer}`;
+    document.getElementById('comments').innerHTML = (data.comments || []).map(item => `<li><strong>${esc(item.member_name)}:</strong> ${esc(item.comment)}</li>`).join('');
+    const whatsapp = document.querySelector('[data-whatsapp-link]'); whatsapp.hidden = !data.whatsappUrl;
+    if (data.whatsappUrl) whatsapp.href = data.whatsappUrl;
+  } catch (error) { box.textContent = error.message || 'Could not load contributions right now.'; }
+}
+function react(id, message, kind) { const node=document.getElementById(id);node.textContent=message;node.dataset.kind=kind;node.scrollIntoView({behavior:'smooth',block:'center'});node.focus({preventScroll:true}); }
+function showDialFallback(amount) { const plainCode=`*182*1*1*${treasurer}*${amount}#`;document.getElementById('dialInstructions').textContent=`Please use your phone and dial: (Send to ${currentEvent.treasurer_name})`;document.getElementById('dialCode').textContent=plainCode;document.getElementById('dialFallback').hidden=false;react('paymentStatus','Use the instructions below to complete MTN MoMo.','error'); }
+document.getElementById('pay').addEventListener('click', () => {
+  const form = document.getElementById('paymentForm');
+  if (!currentEvent) { react('paymentStatus','There is no active event yet.','error'); return; }
+  if (!form.reportValidity()) return;
+  const fields = new FormData(form);
+  const phone = String(fields.get('phone') || '').replace(/\s+/g, '');
+  const amount = String(fields.get('amount') || '').trim();
+  if (!/^07[89]\d{7}$/.test(phone) || !/^\d+$/.test(amount) || !treasurer) {
+    react('paymentStatus','Enter a valid MTN number and contribution amount.','error'); return;
+  }
+  const dialCode=`*182*1*1*${treasurer}*${amount}%23`;
+  document.getElementById('dialFallback').hidden=true;
+  const isDesktop=!/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  if(isDesktop){showDialFallback(amount);return;}
+  try { window.location.href=`tel:${dialCode}`; window.setTimeout(()=>showDialFallback(amount),1200); }
+  catch { showDialFallback(amount); }
+});
+document.getElementById('copyDialCode').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(document.getElementById('dialCode').textContent);react('paymentStatus','Dial code copied. '+document.getElementById('dialCode').textContent,'success');}catch{react('paymentStatus','Copy was blocked. Please copy the dial code shown above manually.','error');}});
+document.getElementById('paymentForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  const form=event.currentTarget;
+  if (!currentEvent) { react('paymentStatus','There is no active event yet.','error'); return; }
+  const fields = new FormData(form);
+  const payload = { action: 'submit-payment', name: fields.get('name'), phone: String(fields.get('phone') || '').replace(/\s+/g, ''), amount: Number(fields.get('amount')) };
+  await window.withButtonLoading(form.querySelector('button[type="submit"]'), async () => { try { const response = await api(payload); const result = await response.json(); if (response.ok) { form.reset(); react('paymentStatus',`Payment recorded! Sent to ${currentEvent.treasurer_name} for approval.`,'success'); } else react('paymentStatus',result.error || `Payment failed (HTTP ${response.status}).`,'error'); }
+  catch (error) { react('paymentStatus',`Could not submit payment: ${error.message}`,'error'); } }, 'Submitting payment...');
+});
+document.getElementById('commentForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  const form=event.currentTarget;
+  if (!currentEvent) { react('commentStatus','There is no active event for comments yet.','error'); return; }
+  const fields = new FormData(form);
+  await window.withButtonLoading(form.querySelector('button[type="submit"],button:not([type])'), async () => { try { const response = await api({ action: 'comment', name: fields.get('name'), comment: fields.get('comment') }); const result = await response.json(); if (response.ok) { form.reset(); await load(); react('commentStatus','Comment posted!','success'); } else react('commentStatus',result.error || `Comment failed (HTTP ${response.status}).`,'error'); }
+  catch (error) { react('commentStatus',`Could not post comment: ${error.message}`,'error'); } }, 'Posting...');
+});
+load();
+setInterval(load, 30000);
+</script></body></html>

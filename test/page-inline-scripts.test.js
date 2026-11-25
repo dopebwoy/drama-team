@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const pages = ['index.html', 'login.html', 'store.html', 'meeting.html', 'about.html', 'contact.html', 'umukomite.html'];
+const pages = ['index.html', 'login.html', 'store.html', 'meeting.html', 'about.html', 'contact.html', 'umukomite.html', 'manager.html', 'contributions.html', 'dev-secret.html', '404.html'];
 
 for (const page of pages) {
   test(`${page} inline scripts parse`, async () => {

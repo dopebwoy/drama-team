@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html class="lazy-loaded" data-lazy-loaded="true">
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,7 +9,13 @@
     <meta name="apple-mobile-web-app-title" content="Drama Team">
     <link rel="apple-touch-icon" href="/photos/apple-touch-icon.png">
     <script src="/pwa.js" defer></script>
-    <title>Drama Team family Gallery images</title>
+    <script src="/guard.js" defer></script>
+    <title>Drama Team Family Gallery | ES Rugabano</title>
+    <meta name="description" content="Browse Drama Team Family photos and videos from performances, gatherings and memories at ES Rugabano in Rwanda.">
+    <link rel="canonical" href="https://drama-team.netlify.app/store.html">
+    <meta property="og:title" content="Drama Team Family Gallery">
+    <meta property="og:description" content="Photos and videos from our family performances and gatherings.">
+    <meta property="og:type" content="website">
     <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-M7B25JY4QZ"></script>
 <script>
@@ -64,6 +70,26 @@
             padding: 8px 14px;
             cursor: pointer;
             transition: opacity .2s ease, transform .2s ease;
+        }
+
+        #contributions-button {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid rgba(230, 201, 137, .55);
+            border-radius: 999px;
+            background: #27313b;
+            color: #fff2cf;
+            font-weight: 700;
+            transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease, color .2s ease;
+        }
+
+        #contributions-button:hover,
+        #contributions-button:focus-visible {
+            border-color: var(--accent);
+            background: #34424e;
+            color: #fff8e5;
+            box-shadow: 0 0 0 3px rgba(230, 201, 137, .16);
+            outline: none;
         }
 
         .nav-button:hover {
@@ -340,7 +366,7 @@
             font-size: 20px;
         }
 
-        .media-group[open] > .media-group-summary::after { content: "−"; }
+        .media-group[open] > .media-group-summary::after { content: "-"; }
 
         .media-group-count {
             color: var(--muted);
@@ -641,12 +667,9 @@
 
 <body>
     <nav>
-        <a href="login.html?role=umukomite">
-            <button type="button" class="nav-button" id="umukomite-button">Umukomitte</button>
-        </a>
-        <a href="index.html">
-            <button type="button" class="nav-button" id="logout-button">Log Out</button>
-        </a>
+        <a href="contributions.html" class="nav-button" id="contributions-button">Contributions</a>
+        <a href="login.html?role=umukomite" class="nav-button" id="umukomite-button">Umukomite</a>
+        <a href="index.html" class="nav-button" id="logout-button">Log Out</a>
     </nav>
 
     <header>
@@ -730,9 +753,11 @@
         <button type="button" class="modal-nav" id="nextMedia" aria-label="Next media">&#10095;</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
         localStorage.setItem('active','active')
          
         "use strict";
@@ -743,10 +768,24 @@
         const MAX_VIDEO_FILE_SIZE = 5 * 1024 * 1024 * 1024;
         const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-        const supabaseClient = window.supabase.createClient(
+        const supabaseClient = window.supabase?.createClient?.(
             SUPABASE_URL,
             SUPABASE_PUBLISHABLE_KEY
-        );
+        ) || null;
+        if (!supabaseClient) {
+            const photosStatus = document.getElementById("defaults");
+            const videosStatus = document.getElementById("videoDefaults");
+            if (photosStatus) photosStatus.textContent = "The gallery service could not load. Please try again shortly.";
+            if (videosStatus) videosStatus.textContent = "The gallery service could not load. Please try again shortly.";
+            document.querySelectorAll("#tools button:not(#start-meeting-button), #tools select").forEach(control => { control.disabled = true; });
+            document.getElementById("start-meeting-button")?.addEventListener("click", () => { window.location.href = "meeting.html"; });
+            document.getElementById("logout-button")?.addEventListener("click", () => {
+                localStorage.removeItem("active");
+                localStorage.removeItem("status");
+                sessionStorage.removeItem("dtm_manager_session");
+            });
+            return;
+        }
 
         const input = document.getElementById("input");
         const uploadTitleInput = document.getElementById("uploadTitle");
@@ -868,7 +907,7 @@
                     const savedName = status[2] ?? status[1] ?? "";
                     title.textContent = savedName;
                     if (status[0] === "new") {
-                        great.textContent = "Hey â˜ºï¸";
+                        great.textContent = "Hey ☺️";
                         title.classList.add("new");
                     }
                 }
@@ -1799,6 +1838,7 @@
             uploadLabel.disabled = true;
             uploadLabel.classList.add("disabled");
             uploadLabel.textContent = "Uploading...";
+            uploadLabel.setAttribute("aria-busy", "true");
             uploadLabel.setAttribute("aria-disabled", "true");
 
             for (const { file, kind } of mediaFiles) {
@@ -1848,6 +1888,7 @@
             uploadLabel.disabled = false;
             uploadLabel.classList.remove("disabled");
             uploadLabel.removeAttribute("aria-disabled");
+            uploadLabel.removeAttribute("aria-busy");
             uploadLabel.textContent = "Upload";
             input.value = "";
             uploadTitleInput.value = "";
@@ -2031,6 +2072,8 @@
         loadUserStatus();
         loadPhotos();
        
-    </script>
+    
+        });
+</script>
 </body>
 </html>

@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="manifest" href="/site.webmanifest">
+  <script src="/pwa.js" defer></script>
+  <script src="/guard.js"></script>
+  <meta name="description" content="Private Drama Team Family contact message inbox.">
+  <title>Contact Inbox | Drama Team Family</title>
+  <style>
+    :root { color-scheme:dark; --bg:#0d1117; --panel:#161b22; --line:#303943; --text:#f3efe7; --muted:#b9c2ca; --accent:#6ee7d8; --gold:#e6c989; }
+    * { box-sizing:border-box }
+    body { margin:0; min-height:100vh; background:linear-gradient(145deg,#0b1716,#111827 65%,#1a1c20); color:var(--text); font:16px system-ui,sans-serif }
+    a { color:var(--accent) }
+    .shell { width:min(980px,94vw); margin:0 auto; padding:24px 0 48px }
+    header,.toolbar,.message-head { display:flex; align-items:center; justify-content:space-between; gap:12px }
+    header { margin-bottom:18px }
+    header strong { color:var(--gold); letter-spacing:.08em; text-transform:uppercase }
+    .panel { padding:clamp(18px,4vw,32px); border:1px solid var(--line); border-radius:16px; background:rgba(22,27,34,.94); box-shadow:0 24px 60px #0005 }
+    h1 { margin:0; font-size:clamp(1.6rem,4vw,2.3rem) }
+    .lead { margin:8px 0 20px; color:var(--muted); line-height:1.55 }
+    button { min-height:40px; padding:8px 13px; border:1px solid #46515d; border-radius:9px; background:#27313b; color:var(--text); font:inherit; font-weight:650; cursor:pointer }
+    button:hover { background:#34424e }
+    button:disabled { cursor:wait; opacity:.6 }
+    .toolbar { margin:14px 0; flex-wrap:wrap }
+    #messageCount { color:var(--muted); font-size:.9rem }
+    #inboxStatus { min-height:1.5em; margin:12px 0; color:var(--muted); font-size:.92rem }
+    #inboxStatus[data-kind="error"] { color:#ffaaaa }
+    #inboxStatus[data-kind="success"] { color:#83e3c2 }
+    .message-list { display:grid; gap:12px }
+    .empty { padding:28px 14px; border:1px dashed var(--line); border-radius:12px; color:var(--muted); text-align:center }
+    .message-card { padding:16px; border:1px solid var(--line); border-radius:12px; background:#111820 }
+    .message-card.unread { border-color:#48765f; box-shadow:inset 3px 0 #6ee7d8 }
+    .message-head { align-items:flex-start }
+    .message-name { margin:0; overflow-wrap:anywhere; font-size:1.05rem }
+    .message-date { flex:0 0 auto; color:var(--muted); font-size:.8rem; text-align:right }
+    .message-body { margin:12px 0 0; color:var(--text); white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.55 }
+    .message-actions { display:flex; justify-content:flex-end; margin-top:12px }
+    #loadOlder { display:block; margin:16px auto 0 }
+    [hidden] { display:none!important }
+    @media(max-width:540px) { .shell { width:100%; padding:10px 0 24px } .panel { border-radius:0; border-left:0; border-right:0 } .message-card { padding:12px } .message-date { max-width:42%; font-size:.72rem } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <strong>Drama Team Family · Manager</strong>
+      <a href="umukomite.html">Back to Umukomite</a>
+    </header>
+    <section class="panel" aria-labelledby="inboxTitle">
+      <h1 id="inboxTitle">Contact inbox</h1>
+      <p class="lead">Messages sent through the contact page are shown here.</p>
+      <p id="inboxStatus" role="status" aria-live="polite"></p>
+      <div id="inboxContent">
+        <div class="toolbar">
+          <span id="messageCount">Loading messages…</span>
+          <div>
+            <button id="refreshButton" type="button">Refresh</button>
+          </div>
+        </div>
+        <div id="messageList" class="message-list" aria-live="polite"></div>
+        <button id="loadOlderButton" type="button" hidden>Load older messages</button>
+      </div>
+    </section>
+  </main>
+  <script type="module">
+    const statusEl = document.getElementById('inboxStatus');
+    const countEl = document.getElementById('messageCount');
+    const listEl = document.getElementById('messageList');
+    const refreshButton = document.getElementById('refreshButton');
+    const loadOlderButton = document.getElementById('loadOlderButton');
+    const managerSessionToken = sessionStorage.getItem('dtm_manager_session');
+    let messages = [];
+    let isLoading = false;
+
+    if (!managerSessionToken) window.location.replace('login.html?role=umukomite');
+
+    function setStatus(message, kind = '') {
+      statusEl.textContent = message;
+      statusEl.dataset.kind = kind;
+    }
+
+    async function requestInbox(action, details = {}) {
+      const response = await fetch('/.netlify/functions/contact-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ action, sessionToken: managerSessionToken, ...details })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        sessionStorage.removeItem('dtm_manager_session');
+        window.location.replace('login.html?role=umukomite');
+      }
+      if (!response.ok) throw new Error(result.error || 'Could not access the contact inbox.');
+      return result;
+    }
+
+    function formatDate(value) {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? 'Date unavailable' : date.toLocaleString();
+    }
+
+    function renderMessages() {
+      listEl.replaceChildren();
+      countEl.textContent = `${messages.length} message${messages.length === 1 ? '' : 's'} loaded`;
+
+      if (!messages.length) {
+        const empty = document.createElement('p');
+        empty.className = 'empty';
+        empty.textContent = 'No contact messages yet.';
+        listEl.append(empty);
+        return;
+      }
+
+      for (const message of messages) {
+        const card = document.createElement('article');
+        card.className = `message-card${message.read_at ? '' : ' unread'}`;
+
+        const head = document.createElement('div');
+        head.className = 'message-head';
+        const name = document.createElement('h2');
+        name.className = 'message-name';
+        name.textContent = message.name || 'Unnamed visitor';
+        const date = document.createElement('time');
+        date.className = 'message-date';
+        date.dateTime = message.created_at || '';
+        date.textContent = formatDate(message.created_at);
+        head.append(name, date);
+
+        const body = document.createElement('p');
+        body.className = 'message-body';
+        body.textContent = message.message || '';
+        card.append(head, body);
+
+        if (!message.read_at) {
+          const actions = document.createElement('div');
+          actions.className = 'message-actions';
+          const markReadButton = document.createElement('button');
+          markReadButton.type = 'button';
+          markReadButton.textContent = 'Mark as read';
+          markReadButton.setAttribute('aria-label', `Mark message from ${message.name || 'visitor'} as read`);
+          markReadButton.addEventListener('click', async () => {
+            await window.withButtonLoading(markReadButton, async () => { try {
+              await requestInbox('mark-read', { id: message.id });
+              message.read_at = new Date().toISOString();
+              setStatus('Message marked as read.', 'success');
+              renderMessages();
+            } catch (error) {
+              setStatus(error.message, 'error');
+            } }, 'Saving...');
+          });
+          actions.append(markReadButton);
+          card.append(actions);
+        }
+        listEl.append(card);
+      }
+    }
+
+    async function loadMessages({ append = false } = {}) {
+      if (isLoading) return;
+
+      isLoading = true;
+      refreshButton.disabled = true;
+      loadOlderButton.disabled = true;
+      setStatus('Loading contact messages…');
+      try {
+        const offset = append ? messages.length : 0;
+        const result = await requestInbox('list', { offset });
+        messages = append ? messages.concat(result.messages || []) : (result.messages || []);
+        renderMessages();
+        loadOlderButton.hidden = !result.hasMore;
+        setStatus('Contact inbox is up to date.', 'success');
+      } catch (error) {
+        setStatus(error.message, 'error');
+      } finally {
+        isLoading = false;
+        refreshButton.disabled = false;
+        loadOlderButton.disabled = false;
+      }
+    }
+
+    refreshButton.addEventListener('click', () => window.withButtonLoading(refreshButton, () => loadMessages(), 'Loading...'));
+    loadOlderButton.addEventListener('click', () => window.withButtonLoading(loadOlderButton, () => loadMessages({ append: true }), 'Loading...'));
+    if (managerSessionToken) {
+      window.withButtonLoading(refreshButton, () => loadMessages(), 'Loading...');
+    }
+  </script>
+</body>
+</html>

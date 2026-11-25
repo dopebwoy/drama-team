@@ -9,6 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Drama Team">
   <link rel="apple-touch-icon" href="/photos/apple-touch-icon.png">
   <script src="/pwa.js" defer></script>
+  <script src="/guard.js"></script>
   <meta name="description" content="Join the Drama Team Family LiveKit video room.">
   <title>Live Meeting | Drama Team Family</title>
   <style>
@@ -52,9 +53,9 @@
 </head>
 <body>
   <main class="shell">
-    <header><strong>Drama Team Family</strong><a href="index.html">🏠Back home</a></header>
+    <header><strong>Drama Team Family</strong><a href="index.html">🏠 Back home</a></header>
     <section class="panel" aria-labelledby="title">
-      <div class="eyebrow">drama team family meet</div>
+      <div class="eyebrow">Drama Team Family Meeting</div>
       <h1 id="title">Join the live meeting</h1>
       <p class="lead">Enter your name to join. Your microphone and camera start off; turn either one on when you are ready.</p>
       <form id="joinForm" class="join-form">
@@ -171,7 +172,7 @@
         if (!response.ok) throw new Error(result.message || 'LiveKit environment variables are missing.');
         setStatus(`Ready to connect to room ☺️${result.roomName}🔛.`, 'success');
       } catch (error) {
-        setStatus(`${error.message} Start the local site with â€œnpm run devâ€ and set the server environment first.`, 'error');
+        setStatus(`${error.message} Start the local site with "npm run dev" and set the server environment first.`, 'error');
       }
     }
 
@@ -269,13 +270,14 @@
     form.addEventListener('submit', async event => {
       event.preventDefault();
       if (room) return;
-      joinButton.disabled = true;
-      setStatus('Getting a secure room tokenâ€¦');
-      try {
+      setStatus('Getting a secure room token\u2026');
+      await window.withButtonLoading(joinButton, async () => { try {
         const response = await fetch('/.netlify/functions/livekit-token', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: nameInput.value.trim(),
+            deviceId: localStorage.getItem('dtf_device_id'),
+            deviceToken: localStorage.getItem('dtf_device_token'),
             role: sessionStorage.getItem('dtm_manager_session') ? 'umukomite' : 'umufamiliye',
             managerSessionToken: sessionStorage.getItem('dtm_manager_session')
           })
@@ -314,7 +316,7 @@
         });
         room.on(RoomEvent.Reconnecting, () => setStatus('Connection interrupted. Reconnecting…', ''));
         room.on(RoomEvent.Reconnected, () => setStatus('Reconnected to the meeting.', 'success'));
-        setStatus('Connecting to LiveKitâ€¦');
+        setStatus('Connecting to LiveKit\u2026');
         await room.connect(data.serverUrl, data.token);
         isInRoom = true;
         participantTile(room.localParticipant);
@@ -345,8 +347,7 @@
         controls.hidden = true;
         form.hidden = false;
         setStatus(error.message || 'Could not join the room.', 'error');
-        joinButton.disabled = false;
-      }
+      } }, 'Joining...');
     });
 
     micButton.addEventListener('click', async () => {

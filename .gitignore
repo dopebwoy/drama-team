@@ -1,5 +1,9 @@
 tes.html
 node_modules/
+.env
+.env.*
+!.env.example
+dev-secret.html
 .netlify/
 .env
 .env.*

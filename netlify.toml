@@ -1,9 +1,23 @@
 [build]
   publish = "."
   functions = "netlify/functions"
+  command = "npm run predeploy"
 
 [functions]
   node_bundler = "esbuild"
+
+# Local-only files are ignored by Git and explicitly return 404 on Netlify.
+[[redirects]]
+  from = "/dev-secret.html"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.env"
+  to = "/404.html"
+  status = 404
+  force = true
 
 [[redirects]]
   from = "/netlify/*"

@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /login.html
+Disallow: /umukomite.html
+Disallow: /manager.html
+Disallow: /meeting.html
+Disallow: /dev-secret.html
 
 Sitemap: https://drama-team.netlify.app/sitemap.xml
